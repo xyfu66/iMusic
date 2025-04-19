@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: score-following-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: imusicdb
+      POSTGRES_PASSWORD: ipwd
+      POSTGRES_DB: score_following
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  cloud-service:
+    build:
+      context: ./backend/cloud-service
+      dockerfile: Dockerfile
+    container_name: score-following-cloud-service
+    restart: always
+    ports:
+      - "8101:8101"
+      - "5678:5678"
+    environment:
+      DATABASE_URL: postgresql://imusicdb:ipwd@postgres/score_following
+      DEBUG: "false"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
