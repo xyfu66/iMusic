@@ -17,23 +17,30 @@ RUN apt-get update && \
     python3-dev \
     libffi-dev \
     libssl-dev \
-    netcat-traditional && \
+    netcat-traditional \
+    dos2unix \
+    file && \
     update-ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 最后复制所有代码
+# 复制所有代码
 COPY . /app
-RUN chmod +x /app/start_app.sh
 
-RUN pip install --upgrade pip setuptools wheel
+# 修复文件格式并设置权限
+RUN dos2unix /app/start_app.sh && \
+    chmod +x /app/start_app.sh && \
+    head -n 1 /app/start_app.sh && \
+    ls -la /app/start_app.sh && \
+    echo "Script contents:" && \
+    cat /app/start_app.sh
+
 # 安装 Python 依赖
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
-
 # 暴露端口
 EXPOSE 8101 5678
 
-# 启动命令
-CMD ["sh", "-c", "./start_app.sh"]
+# 使用 shell 形式的 CMD，这样可以使用 shell 的特性
+CMD /bin/bash -c "/app/start_app.sh"

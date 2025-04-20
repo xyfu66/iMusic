@@ -2,10 +2,12 @@ import partitura
 import tempfile
 
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from app.models import User, Permission, UserRole, RolePermission
 from app.auth import hash_password
+from app.utils import GetFileType
 
 # 创建临时目录
 TEMP_DIR = Path(tempfile.gettempdir()) / "score_evaluation"
@@ -61,3 +63,8 @@ def preprocess_score(score_xml: Path) -> tuple[str, str]:
     partitura.save_wav_fluidsynth(score_obj, score_audio_path)
 
     return score_midi_path, score_audio_path
+
+
+async def find_file_by_id(file_id: str, file_type: GetFileType) -> Optional[Path]:
+    
+    return None

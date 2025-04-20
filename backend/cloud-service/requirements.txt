@@ -12,6 +12,7 @@ passlib[bcrypt]==1.7.4
 
 # 音乐处理库
 partitura>=1.5.0
+pymatchmaker
 
 # 音频处理相关
 pyfluidsynth>=1.3.3
