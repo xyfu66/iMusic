@@ -40,6 +40,7 @@ const PracticePage: React.FC = () => {
   const [isPerformceModel, setIsPerformceModel] = useState<boolean>(false); // 是否为演示模式
   const [performanceFile, setPerformanceFile] = useState<Blob | null>(null); // 演示模式下的文件
   const [practiceMode, setPracticeMode] = useState<'follow' | 'demo' | 'evaluate'>('follow');
+  const [hasStartedPractice, setHasStartedPractice] = useState<boolean>(false);
 
 
   // Compute audio URL
@@ -255,6 +256,7 @@ const PracticePage: React.FC = () => {
     }
 
     setIsPlaying(true);
+    setHasStartedPractice(true);
     console.log('Starting music playback...');
     cursor.current.reset();
 
@@ -311,13 +313,19 @@ const PracticePage: React.FC = () => {
       audioPlayerRef.current.pause();
       audioPlayerRef.current.seekTo(0); // 重置到起始位置
     }
-    setPausedTime(0); // 重置暂停时间
-    setIsPlaying(false);
+    setPausedTime(0);
+    
+    // 先关闭 WebSocket 连接
     if (ws.current) {
+      // 发送停止信号
+      ws.current.send(JSON.stringify({ action: 'stop' }));
+      // 关闭连接
       ws.current.close();
       ws.current = null;
-      console.log('WebSocket connection closed');
     }
+    
+    setIsPlaying(false);
+    console.log('WebSocket connection closed');
   };
 
   const fetchDemoAudio = async (fileId: string) => {
@@ -407,65 +415,66 @@ const PracticePage: React.FC = () => {
       {/* 主体内容 */}
       <div className="flex-1 pb-32">
         <div className="flex flex-col items-center space-y-3 py-2">
-          <div className="flex space-x-4 items-center">
-            <button
-              onClick={() => setInputType(AUDIO)}
-              className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
-                inputType === AUDIO ? 'bg-blue-500 text-white shadow-md scale-105' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              🎤 Audio
-            </button>
-            <button
-              onClick={() => setInputType(MIDI)}
-              className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
-                inputType === MIDI ? 'bg-blue-500 text-white shadow-md scale-105' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              🎹 MIDI
-            </button>
-          </div>
-
           {(practiceMode === 'follow' || practiceMode === 'evaluate') && (
             <>
-              {inputType === AUDIO && (
-                <div className="flex space-x-4 items-center">
-                  <div className="w-64">
+              <div className="flex space-x-4 items-center">
+                <button
+                  onClick={() => setInputType(AUDIO)}
+                  className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                    inputType === AUDIO ? 'bg-blue-500 text-white shadow-md scale-105' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  🎤 Audio
+                </button>
+                <button
+                  onClick={() => setInputType(MIDI)}
+                  className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                    inputType === MIDI ? 'bg-blue-500 text-white shadow-md scale-105' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  🎹 MIDI
+                </button>
+              </div>
+              <div>
+                {inputType === AUDIO && (
+                  <div className="flex space-x-4 items-center">
+                    <div className="w-64">
+                      <select
+                        value={selectedAudioDevice}
+                        onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
+                        className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
+                      >
+                        {audioDevices.map((device, index) => (
+                          <option key={index} value={device.index}>
+                            {device.name || `Audio Device ${index + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      {inputType === AUDIO && (
+                        <AudioInputVisualizer deviceIndex={selectedAudioDevice} />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {inputType === MIDI && (
+                  <div className="w-64 mt-4">
                     <select
-                      value={selectedAudioDevice}
-                      onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
+                      value={selectedMidiDevice}
+                      onChange={(e) => setSelectedMidiDevice(e.target.value)}
                       className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
                     >
-                      {audioDevices.map((device, index) => (
-                        <option key={index} value={device.index}>
-                          {device.name || `Audio Device ${index + 1}`}
+                      {midiDevices.map((device, index) => (
+                        <option key={index} value={device.id}>
+                          {device.name || `MIDI Device ${index + 1}`}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    {inputType === AUDIO && (
-                      <AudioInputVisualizer deviceIndex={selectedAudioDevice} />
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {inputType === MIDI && (
-                <div className="w-64 mt-4">
-                  <select
-                    value={selectedMidiDevice}
-                    onChange={(e) => setSelectedMidiDevice(e.target.value)}
-                    className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
-                  >
-                    {midiDevices.map((device, index) => (
-                      <option key={index} value={device.id}>
-                        {device.name || `MIDI Device ${index + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
 
@@ -497,6 +506,21 @@ const PracticePage: React.FC = () => {
             >
               <span className="mr-2">⏹️</span> Stop
             </button>
+            {practiceMode === 'evaluate' && (
+              <button
+                className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                  (!isPlaying && hasStartedPractice) 
+                    ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+                disabled={isPlaying || !hasStartedPractice}
+                onClick={() => {
+                  // TODO: 实现录音上传和评测功能
+                }}
+              >
+                {isPlaying ? '录音中' : '提交测评'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -517,22 +541,6 @@ const PracticePage: React.FC = () => {
             }}
             onEnded={stopMusic}
           />
-        )}
-
-        {practiceMode === 'evaluate' && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg">
-            <div className="container mx-auto flex justify-between items-center">
-              <span className="text-gray-700">录音中...</span>
-              <button
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                onClick={() => {
-                  // TODO: 实现录音上传和评测功能
-                }}
-              >
-                结束录音并评测
-              </button>
-            </div>
-          </div>
         )}
       </div>
     </div>

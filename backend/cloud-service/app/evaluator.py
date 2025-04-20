@@ -3,7 +3,6 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, Optional
-from enum import Enum
 import partitura
 from matchmaker import Matchmaker
 from .common import GetFileType, EvaluationMetric

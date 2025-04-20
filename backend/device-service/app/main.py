@@ -94,6 +94,37 @@ async def midi_devices():
 
 @app.websocket("/local/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    tasks = []  # 存储所有需要管理的任务
+    main_task = None
+    
+    async def listen_for_stop():
+        try:
+            while True:
+                data = await websocket.receive_json()
+                if data.get("action") == "stop":
+                    print("[DEBUG] Received stop signal")
+                    return True
+        except Exception as e:
+            print(f"[DEBUG] Error in stop listener: {e}")
+            return True
+
+    async def update_position(file_id):
+        prev_position = 0
+        iteration_count = 0
+        try:
+            while websocket.client_state == WebSocketState.CONNECTED:
+                current_position = position_manager.get_position(file_id)
+                iteration_count += 1
+                print(f"[DEBUG] Iteration {iteration_count}: Current position: {current_position}")
+                
+                if not math.isclose(current_position, prev_position, abs_tol=0.001):
+                    await websocket.send_json({"beat_position": current_position})
+                    prev_position = current_position
+
+                await asyncio.sleep(0.1)
+        except Exception as e:
+            print(f"[DEBUG] Error in position updater: {e}")
+
     try:
         position_manager.reset()
         await websocket.accept()
@@ -106,44 +137,46 @@ async def websocket_endpoint(websocket: WebSocket):
         device = data.get("device")
         print(f"[DEBUG] Received data: {data}")
 
-        # 使用线程池执行阻塞操作
+        # 使用线程池执行主要任务
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor(max_workers=1) as executor:
-            # 创建异步任务
-            task = loop.run_in_executor(
+            main_task = loop.run_in_executor(
                 executor,
                 lambda: asyncio.run(run_score_following(file_id, input_type, is_performce_model, device))
             )
-
-            prev_position = 0
-            iteration_count = 0
             
-            while websocket.client_state == WebSocketState.CONNECTED:
-                try:
-                    # 非阻塞地检查任务状态
-                    if task.done():
-                        result = task.result()
-                        if isinstance(result, dict) and "error" in result:
-                            await websocket.send_json({"error": result["error"]})
-                        else:
-                            await websocket.send_json({"status": "completed"})
-                        break
+            # 创建并启动所有任务
+            stop_listener = asyncio.create_task(listen_for_stop())
+            position_updater = asyncio.create_task(update_position(file_id))
+            tasks.extend([stop_listener, position_updater])
 
-                    # 获取并更新位置
-                    current_position = position_manager.get_position(file_id)
-                    iteration_count += 1
-                    print(f"[DEBUG] Iteration {iteration_count}: Current position: {current_position}")
-                    
-                    if not math.isclose(current_position, prev_position, abs_tol=0.001):
-                        await websocket.send_json({"beat_position": current_position})
-                        prev_position = current_position
+            # 等待任意一个任务完成
+            done, pending = await asyncio.wait(
+                [stop_listener, position_updater, main_task],
+                return_when=asyncio.FIRST_COMPLETED
+            )
 
-                    await asyncio.sleep(0.1)
-                    
-                except Exception as e:
-                    print(f"[DEBUG] Error in main loop: {e}")
-                    await websocket.send_json({"error": str(e)})
-                    break
+            # 如果是停止信号或者出错，取消所有任务
+            should_stop = any(
+                t in done and (
+                    (t == stop_listener and t.result()) or  # 停止信号
+                    (t == main_task and isinstance(t.result(), dict) and "error" in t.result())  # 错误
+                )
+                for t in done
+            )
+
+            if should_stop:
+                print("[DEBUG] Stopping all tasks...")
+                # 取消所有未完成的任务
+                for task in pending:
+                    if not task.done():
+                        task.cancel()
+                # 取消主任务
+                if not main_task.done():
+                    main_task.cancel()
+                
+                # 等待所有任务完成取消
+                await asyncio.gather(*pending, return_exceptions=True)
 
     except Exception as e:
         print(f"[DEBUG] WebSocket error: {e}")
@@ -151,6 +184,17 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({"error": str(e)})
     finally:
         print("[DEBUG] Cleaning up...")
+        # 确保所有任务都被取消
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        if main_task and not main_task.done():
+            main_task.cancel()
+        
+        # 等待所有任务完成取消
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        
         if websocket.client_state == WebSocketState.CONNECTED:
             await websocket.close()
         position_manager.reset()

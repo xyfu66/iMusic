@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from app.models import User, Permission, UserRole, RolePermission
 from app.auth import hash_password
-from app.utils import GetFileType
+from app.common import GetFileType
 
 # 创建临时目录
 TEMP_DIR = Path(tempfile.gettempdir()) / "score_evaluation"
