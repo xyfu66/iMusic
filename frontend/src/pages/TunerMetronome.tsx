@@ -68,11 +68,11 @@ const TunerMetronome: React.FC = () => {
             <label className="block text-gray-700">选择音源设备:</label>
             <select
               value={selectedAudioDevice}
-              onChange={(e) => setSelectedAudioDevice(e.target.value)}
+              onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
               className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
             >
               {audioDevices.map((device, index) => (
-                <option key={index} value={device.id}>
+                <option key={index} value={device.index}>
                   {device.name || `Audio Device ${index + 1}`}
                 </option>
               ))}

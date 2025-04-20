@@ -10,7 +10,7 @@
     "test": "next test"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.1",
+    "@headlessui/react": "^2.2.2",
     "@nextui-org/react": "^2.4.8",
     "next": "^15.1.0",
     "opensheetmusicdisplay": "^1.8.9",

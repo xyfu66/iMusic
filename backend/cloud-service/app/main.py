@@ -1,12 +1,14 @@
 import uuid
 import shutil
 import base64
+import logging
 
 from pathlib import Path
 from fastapi import FastAPI, File, Form, UploadFile, WebSocket, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from .utils import (
     preprocess_score,
@@ -17,6 +19,11 @@ from .models import UploadedFile, User, UserRole, Role, Permission, RolePermissi
 from .auth import (hash_password, verify_password, create_token, decode_token)  # Import hash_password if defined in utils
 from .RequestModel import LoginRequest, RegisterRequest, ChangePasswordRequest, ManagePermissionRequest
 from .response_utils import success_response, error_response
+from .evaluator import PerformanceEvaluator
+from .utils import TEMP_DIR
+
+# 创建评测器实例
+evaluator = PerformanceEvaluator()
 
 app = FastAPI()
 app.add_middleware(
@@ -470,3 +477,31 @@ def delete_file(file_id: str, user: User = Depends(get_current_user), db: Sessio
         return success_response(message="File deleted successfully")
     except Exception as e:
         return error_response(message=f"Failed to delete file: {str(e)}", status_code=500)
+
+
+
+@app.post("/local/evaluate")
+async def evaluate_performance(file_id: str, audio_data: UploadFile, user: User = Depends(get_current_user)):
+    """
+    评测用户的演奏表现
+    """
+    try:
+        # 1. 保存录音文件
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        recording_path = TEMP_DIR / user.id / f"evaluation_{file_id}_{timestamp}.wav"
+        with open(recording_path, "wb") as f:
+            content = await audio_data.read()
+            f.write(content)
+
+        # 2. 进行评测
+        result = await evaluator.evaluate_performance(file_id, recording_path)
+
+        # 3. 清理临时文件
+        if recording_path.exists():
+            recording_path.unlink()
+
+        return result
+
+    except Exception as e:
+        logging.error(f"评测过程发生错误: {str(e)}")
+        return {"success": False, "error": str(e)}

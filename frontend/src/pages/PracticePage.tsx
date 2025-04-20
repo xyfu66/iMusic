@@ -8,6 +8,7 @@ import { decodeBase64, FileType, getCloudBackendUrl, getDeviceBackendUrl, getFil
 import { useRecoilValue } from 'recoil';
 import { practiceState } from '../state/practiceState';
 import { useAudioDevices } from '../hooks/useAudioDevices';
+import { Menu } from '@headlessui/react';
 
 
 const BE_Url_Local = getDeviceBackendUrl();
@@ -38,6 +39,7 @@ const PracticePage: React.FC = () => {
   const [pausedTime, setPausedTime] = useState(0); // 记录暂停时间
   const [isPerformceModel, setIsPerformceModel] = useState<boolean>(false); // 是否为演示模式
   const [performanceFile, setPerformanceFile] = useState<Blob | null>(null); // 演示模式下的文件
+  const [practiceMode, setPracticeMode] = useState<'follow' | 'demo' | 'evaluate'>('follow');
 
 
   // Compute audio URL
@@ -318,13 +320,84 @@ const PracticePage: React.FC = () => {
     }
   };
 
+  const fetchDemoAudio = async (fileId: string) => {
+    try {
+      const response = await fetch(`${BE_Url_Cloud}/cloud/get-audio-file-by-id/${fileId}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        setPerformanceFile(blob);
+      }
+    } catch (error) {
+      console.error('Error fetching demo audio:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (practiceMode === 'demo') {
+      setIsPerformceModel(true);
+      if (fileId.current) {
+        fetchDemoAudio(fileId.current);
+      }
+    } else {
+      setIsPerformceModel(false);
+      setPerformanceFile(null);
+    }
+  }, [practiceMode]);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header 部分 */}
       <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
-        <h1 className="text-xl font-bold">Practice</h1>
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold">Practice</h1>
+          <Menu as="div" className="relative">
+            <Menu.Button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+              {practiceMode === 'follow' && '跟音练习'}
+              {practiceMode === 'demo' && '演示模式'}
+              {practiceMode === 'evaluate' && '测评模式'}
+            </Menu.Button>
+            <Menu.Items className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    className={`${
+                      active ? 'bg-blue-500 text-white' : 'text-gray-900'
+                    } group flex w-full items-center px-4 py-2 text-sm`}
+                    onClick={() => setPracticeMode('follow')}
+                  >
+                    跟音练习
+                  </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    className={`${
+                      active ? 'bg-blue-500 text-white' : 'text-gray-900'
+                    } group flex w-full items-center px-4 py-2 text-sm`}
+                    onClick={() => setPracticeMode('demo')}
+                  >
+                    演示模式
+                  </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    className={`${
+                      active ? 'bg-blue-500 text-white' : 'text-gray-900'
+                    } group flex w-full items-center px-4 py-2 text-sm`}
+                    onClick={() => setPracticeMode('evaluate')}
+                  >
+                    测评模式
+                  </button>
+                )}
+              </Menu.Item>
+            </Menu.Items>
+          </Menu>
+        </div>
         <button
-          onClick={() => router.back()} // 返回上一级
+          onClick={() => router.back()}
           className="bg-red-500 text-white px-4 py-2 rounded"
         >
           返回
@@ -353,44 +426,47 @@ const PracticePage: React.FC = () => {
             </button>
           </div>
 
-          {inputType === AUDIO && (
-            <div className="flex space-x-4 items-center">
-              <div className="w-64">
-                <select
-                  value={selectedAudioDevice}
-                  onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
-                  className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
-                >
-                  {audioDevices.map((device, index) => (
-                    <option key={index} value={device.index}>
-                      {device.name || `Audio Device ${index + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                {inputType === AUDIO && (
-                  <AudioInputVisualizer deviceIndex={selectedAudioDevice} />
-                )}
-              </div>
-            </div>
-            
-          )}
+          {(practiceMode === 'follow' || practiceMode === 'evaluate') && (
+            <>
+              {inputType === AUDIO && (
+                <div className="flex space-x-4 items-center">
+                  <div className="w-64">
+                    <select
+                      value={selectedAudioDevice}
+                      onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
+                      className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
+                    >
+                      {audioDevices.map((device, index) => (
+                        <option key={index} value={device.index}>
+                          {device.name || `Audio Device ${index + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    {inputType === AUDIO && (
+                      <AudioInputVisualizer deviceIndex={selectedAudioDevice} />
+                    )}
+                  </div>
+                </div>
+              )}
 
-          {inputType === MIDI && (
-            <div className="w-64 mt-4">
-              <select
-                value={selectedMidiDevice}
-                onChange={(e) => setSelectedMidiDevice(e.target.value)}
-                className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
-              >
-                {midiDevices.map((device, index) => (
-                  <option key={index} value={device.id}>
-                    {device.name || `MIDI Device ${index + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {inputType === MIDI && (
+                <div className="w-64 mt-4">
+                  <select
+                    value={selectedMidiDevice}
+                    onChange={(e) => setSelectedMidiDevice(e.target.value)}
+                    className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
+                  >
+                    {midiDevices.map((device, index) => (
+                      <option key={index} value={device.id}>
+                        {device.name || `MIDI Device ${index + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex space-x-4 mt-4">
@@ -427,7 +503,7 @@ const PracticePage: React.FC = () => {
         {/* osmdContainer */}
         <div ref={vfRef} id="osmdContainer" ></div>
 
-        {isPerformceModel && (
+        {practiceMode === 'demo' && (
           <CustomAudioPlayer
             ref={audioPlayerRef}
             isPerformceModel={isPerformceModel}
@@ -441,6 +517,22 @@ const PracticePage: React.FC = () => {
             }}
             onEnded={stopMusic}
           />
+        )}
+
+        {practiceMode === 'evaluate' && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg">
+            <div className="container mx-auto flex justify-between items-center">
+              <span className="text-gray-700">录音中...</span>
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                onClick={() => {
+                  // TODO: 实现录音上传和评测功能
+                }}
+              >
+                结束录音并评测
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

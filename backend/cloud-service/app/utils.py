@@ -1,10 +1,15 @@
 import partitura
+import tempfile
 
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 from app.models import User, Permission, UserRole, RolePermission
 from app.auth import hash_password
+
+# 创建临时目录
+TEMP_DIR = Path(tempfile.gettempdir()) / "score_evaluation"
+TEMP_DIR.mkdir(exist_ok=True)
 
 def create_user(db: Session, email: str, username: str, password: str, permission_name: str):
     permission = db.query(Permission).filter(Permission.name == permission_name).first()

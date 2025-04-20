@@ -4,9 +4,6 @@ FROM python:3.10-slim
 # 设置工作目录
 WORKDIR /app
 
-# 复制后端代码到容器中
-COPY . /app
-
 # 安装必要的系统依赖
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -19,28 +16,24 @@ RUN apt-get update && \
     build-essential \
     python3-dev \
     libffi-dev \
-    libssl-dev && \
+    libssl-dev \
+    netcat-traditional && \
     update-ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 升级 pip 并安装 setuptools 和 wheel
-RUN pip install --upgrade pip setuptools wheel
+# 最后复制所有代码
+COPY . /app
+RUN chmod +x /app/start_app.sh
 
+RUN pip install --upgrade pip setuptools wheel
 # 安装 Python 依赖
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
+
 
 # 暴露端口
 EXPOSE 8101 5678
+
+# 启动命令
 CMD ["sh", "-c", "./start_app.sh"]
-
-
-# # 测试环境：安装 debugpy
-# RUN pip install debugpy
-
-# # 暴露端口
-# EXPOSE 8101 5678
-
-# # 启动后端服务并启用 debugpy
-# CMD ["sh", "-c", "python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8101"]

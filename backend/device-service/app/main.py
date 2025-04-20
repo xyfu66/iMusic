@@ -1,13 +1,14 @@
 import asyncio
 import math
 import warnings
+import debugpy
+import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from fastapi import WebSocket, WebSocketDisconnect
 from typing import Dict, Optional
-import debugpy
 
 warnings.filterwarnings("ignore", module="partitura")
 
@@ -24,10 +25,15 @@ from .utils import (
 )
 
 # 在 FastAPI 应用启动前添加
-debugpy.listen(5678)
-print("Waiting for debugger to attach...")
-debugpy.wait_for_client()
-print("Debugger attached!")
+# 获取环境变量，默认为 production
+ENV = os.getenv("APP_ENV", "production")
+
+# 只在开发环境启用 debugpy
+if ENV == "development":
+    debugpy.listen(5678)
+    print("Waiting for debugger to attach...")
+    debugpy.wait_for_client()
+    print("Debugger attached!")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -149,3 +155,4 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close()
         position_manager.reset()
         cleanup_temp_files()
+

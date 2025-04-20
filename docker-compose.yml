@@ -3,28 +3,35 @@ version: '3.8'
 services:
   postgres:
     image: postgres:14
-    container_name: score-following-postgres
+    container_name: imusic-postgres
     restart: always
     environment:
-      POSTGRES_USER: imusicdb
+      POSTGRES_USER: imusicuser
       POSTGRES_PASSWORD: ipwd
-      POSTGRES_DB: score_following
+      POSTGRES_DB: imusicdb
+      POSTGRES_USER_DB: imusicdb
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/cloud-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imusicuser -d imusicdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   cloud-service:
     build:
       context: ./backend/cloud-service
       dockerfile: Dockerfile
-    container_name: score-following-cloud-service
+    container_name: imusic-cloud-service
     restart: always
     ports:
       - "8101:8101"
       - "5678:5678"
     environment:
-      DATABASE_URL: postgresql://imusicdb:ipwd@postgres/score_following
+      DATABASE_URL: postgresql://imusicuser:ipwd@postgres/imusicdb
       DEBUG: "false"
     depends_on:
       - postgres
