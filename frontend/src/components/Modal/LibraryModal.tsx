@@ -7,13 +7,15 @@ interface LibraryModalProps {
   onClose: () => void;
   title: string;
   type: 'library' | 'myLibrary';
+  onRefresh?: () => void;
 }
 
 const LibraryModal: React.FC<LibraryModalProps> = ({
   isOpen,
   onClose,
   title,
-  type
+  type,
+  onRefresh
 }) => {
   const [files, setFiles] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +55,13 @@ const LibraryModal: React.FC<LibraryModalProps> = ({
     }
   };
 
+  const handleClose = () => {
+    if (onRefresh) {
+      onRefresh();
+    }
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -61,7 +70,7 @@ const LibraryModal: React.FC<LibraryModalProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-500 hover:text-gray-700"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,6 +96,9 @@ const LibraryModal: React.FC<LibraryModalProps> = ({
                     key={file.id}
                     file={file}
                     type={type}
+                    onDelete={() => {
+                      fetchFiles(currentPage);
+                    }}
                   />
                 ))}
               </div>

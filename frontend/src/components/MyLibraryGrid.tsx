@@ -1,22 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import FileCard from './FileCard';
 import { api } from '../services/api';
 import FileUploadSection from './FileUploadSection';
 
-
 interface MyLibraryGridProps {
   onShowMore?: () => void;
+  onUploadComplete: () => void;
+  onDelete: () => void;
 }
 
-const MyLibraryGrid: React.FC<MyLibraryGridProps> = ({ onShowMore }) => {
+const MyLibraryGrid = forwardRef<any, MyLibraryGridProps>(({ onShowMore, onUploadComplete, onDelete }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(5);
   const [myLibrary, setMyLibrary] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchMyLibrary();
-  }, []);
 
   const fetchMyLibrary = async () => {
     try {
@@ -29,6 +26,14 @@ const MyLibraryGrid: React.FC<MyLibraryGridProps> = ({ onShowMore }) => {
       setIsLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    fetchMyLibrary
+  }));
+
+  useEffect(() => {
+    fetchMyLibrary();
+  }, []);
 
   useEffect(() => {
     const calculateVisibleCount = () => {
@@ -92,7 +97,7 @@ const MyLibraryGrid: React.FC<MyLibraryGridProps> = ({ onShowMore }) => {
                       key={file.id}
                       file={file}
                       type="myLibrary"
-                      onRefresh={fetchMyLibrary}
+                      onDelete={() => onDelete()}
                     />
                   ))}
                 </div>
@@ -101,17 +106,17 @@ const MyLibraryGrid: React.FC<MyLibraryGridProps> = ({ onShowMore }) => {
           </div>
           <div className="w-80">
             <FileUploadSection onUploadComplete={() => {
-              // 刷新两个网格
-              const libraryGrid = document.querySelector('.library-grid');
-              const myLibraryGrid = document.querySelector('.my-library-grid');
-              if (libraryGrid) libraryGrid.dispatchEvent(new Event('refresh'));
-              if (myLibraryGrid) myLibraryGrid.dispatchEvent(new Event('refresh'));
+              if (onUploadComplete) {
+                onUploadComplete();
+              }
             }} />
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
+
+MyLibraryGrid.displayName = 'MyLibraryGrid';
 
 export default MyLibraryGrid;

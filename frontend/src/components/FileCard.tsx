@@ -14,10 +14,10 @@ interface FileCardProps {
     is_public?: boolean;
   };
   type: 'library' | 'myLibrary';
-  onRefresh?: () => void;
+  onDelete?: () => void;
 }
 
-const FileCard: React.FC<FileCardProps> = ({ file, type, onRefresh }) => {
+const FileCard: React.FC<FileCardProps> = ({ file, type, onDelete }) => {
   const router = useRouter();
   const [practiceData, setPracticeData] = useRecoilState(practiceState);
 
@@ -45,8 +45,8 @@ const FileCard: React.FC<FileCardProps> = ({ file, type, onRefresh }) => {
     if (window.confirm('确定要删除这个乐谱吗？')) {
       try {
         await api.deleteFile(file.id);
-        if (onRefresh) {
-          onRefresh();
+        if (onDelete) {
+          onDelete();
         }
         alert('删除成功');
       } catch (error) {

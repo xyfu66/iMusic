@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import LibraryGrid from '../components/LibraryGrid';
 import MyLibraryGrid from '../components/MyLibraryGrid';
 import LoginModal from '../components/Modal/LoginModal';
@@ -18,6 +18,8 @@ const IndexPage: React.FC = () => {
   const [showMyLibraryModal, setShowMyLibraryModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const libraryGridRef = useRef<any>(null);
+  const myLibraryGridRef = useRef<any>(null);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -59,6 +61,15 @@ const IndexPage: React.FC = () => {
 
     checkLoginStatus();
   }, [setUser]);
+
+  const refresh = () => {
+    if (libraryGridRef.current) {
+      libraryGridRef.current.fetchLibrary();
+    }
+    if (myLibraryGridRef.current) {
+      myLibraryGridRef.current.fetchMyLibrary();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -132,16 +143,18 @@ const IndexPage: React.FC = () => {
 
       {/* 曲目库区域 */}
       <LibraryGrid 
+        ref={libraryGridRef}
         onShowMore={() => setShowLibraryModal(true)}
       />
-      
 
       {/* 我的曲目区域 */}
       {user.isLoggedIn && (
         <MyLibraryGrid 
+          ref={myLibraryGridRef}
           onShowMore={() => setShowMyLibraryModal(true)}
+          onUploadComplete={refresh}
+          onDelete={refresh}
         />
-        
       )}
 
       {/* 模态框 */}
@@ -150,12 +163,14 @@ const IndexPage: React.FC = () => {
         onClose={() => setShowLibraryModal(false)}
         title="乐谱库"
         type="library"
+        onRefresh={refresh}
       />
       <LibraryModal
         isOpen={showMyLibraryModal}
         onClose={() => setShowMyLibraryModal(false)}
         title="我的乐谱"
         type="myLibrary"
+        onRefresh={refresh}
       />
     </div>
   );

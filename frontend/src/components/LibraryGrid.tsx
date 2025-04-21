@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import FileCard from './FileCard';
 import { api } from '../services/api';
 
@@ -6,15 +6,11 @@ interface LibraryGridProps {
   onShowMore?: () => void;
 }
 
-const LibraryGrid: React.FC<LibraryGridProps> = ({ onShowMore }) => {
+const LibraryGrid = forwardRef<any, LibraryGridProps>(({ onShowMore }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(5);
   const [library, setLibrary] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchLibrary();
-  }, []);
 
   const fetchLibrary = async () => {
     try {
@@ -27,6 +23,14 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({ onShowMore }) => {
       setIsLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    fetchLibrary
+  }));
+
+  useEffect(() => {
+    fetchLibrary();
+  }, []);
 
   useEffect(() => {
     const calculateVisibleCount = () => {
@@ -89,7 +93,6 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({ onShowMore }) => {
                     key={file.id}
                     file={file}
                     type="library"
-                    onRefresh={fetchLibrary}
                   />
                 ))}
               </div>
@@ -99,6 +102,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({ onShowMore }) => {
       </div>
     </div>
   );
-};
+});
+
+LibraryGrid.displayName = 'LibraryGrid';
 
 export default LibraryGrid;
