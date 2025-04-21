@@ -1,11 +1,43 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from app.db_base import DATABASE_URL, Base, engine  # 使用从 db_base 导入的 Base
 import app.models  # 导入模块以注册所有模型
 from sqlalchemy.orm import Session
 
+# 同步引擎和会话
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 异步引擎和会话
+async_engine = create_async_engine(
+    DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://'),
+    echo=True,
+    future=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800
+)
+
+async_session = async_sessionmaker(
+    async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False
+)
+
+async def get_async_db():
+    async with async_session() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 def get_db():
     db = SessionLocal()

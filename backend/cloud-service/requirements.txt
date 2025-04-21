@@ -6,6 +6,7 @@ uvicorn==0.22.0
 sqlalchemy==1.4.46
 psycopg2-binary==2.9.6
 alembic
+asyncpg==0.30.0
 
 # 密码哈希
 passlib[bcrypt]==1.7.4

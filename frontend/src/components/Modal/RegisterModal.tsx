@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { register } from '../services/AuthService';
+import { register } from '../../services/AuthService';
 import Modal from './Modal';
 
 interface RegisterModalProps {

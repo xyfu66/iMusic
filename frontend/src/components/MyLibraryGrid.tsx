@@ -1,46 +1,115 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import FileCard from './FileCard';
+import { api } from '../services/api';
+import FileUploadSection from './FileUploadSection';
+
 
 interface MyLibraryGridProps {
-  myLibrary: Array<{
-    id: string;
-    filename: string;
-    uploaded_at?: string;
-    is_public?: boolean;
-  }>;
-  onSelect: (file_id: string) => void;
-  onDelete: (file_id: string) => void; // 删除回调
+  onShowMore?: () => void;
 }
 
-const MyLibraryGrid: React.FC<MyLibraryGridProps> = ({ myLibrary, onSelect, onDelete }) => {
-  if (myLibrary.length === 0) {
+const MyLibraryGrid: React.FC<MyLibraryGridProps> = ({ onShowMore }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [myLibrary, setMyLibrary] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMyLibrary();
+  }, []);
+
+  const fetchMyLibrary = async () => {
+    try {
+      setIsLoading(true);
+      const data = await api.fetchMyLibrary();
+      setMyLibrary(data);
+    } catch (error) {
+      console.error('Error fetching my library:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const calculateVisibleCount = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const cardElement = containerRef.current.querySelector('.file-card');
+        const cardWidth = cardElement ? cardElement.getBoundingClientRect().width : 200;
+        const gap = 16;
+        const count = Math.floor((containerWidth + gap) / (cardWidth + gap));
+        setVisibleCount(Math.max(1, count));
+      }
+    };
+
+    setTimeout(calculateVisibleCount, 100);
+    window.addEventListener('resize', calculateVisibleCount);
+    return () => window.removeEventListener('resize', calculateVisibleCount);
+  }, []);
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full text-gray-500">
-        You haven't uploaded any tracks yet.
+      <div className="flex justify-center items-center h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
+  if (myLibrary.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-48 text-gray-500">
+        暂无乐谱，请上传文件。
+      </div>
+    );
+  }
+
+  const visibleLibrary = myLibrary.slice(0, visibleCount);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-      {myLibrary.map((file) => (
-        <div
-          key={file.id}
-          className="border rounded-lg p-4 shadow hover:shadow-lg transition cursor-pointer"
-          onClick={() => onSelect(file.id)}
-        >
-          <h3 className="font-bold text-lg truncate">{file.filename}</h3>
-          {file.uploaded_at && (
-            <p className="text-sm text-gray-500">Uploaded at: {new Date(file.uploaded_at).toLocaleString()}</p>
+    <div className="flex-1 bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">My Library</h2>
+          {myLibrary.length > visibleCount && onShowMore && (
+            <button
+              onClick={onShowMore}
+              className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+            >
+              显示更多
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
           )}
-          <p className="text-sm text-gray-500">Status: {file.is_public ? 'Public' : 'Private'}</p>
-          <button
-            onClick={() => onDelete(file.id)}
-            className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
-          >
-            Delete
-          </button>
         </div>
-      ))}
+        <div className="flex gap-6">
+          <div className="flex-1 relative">
+            <div className="overflow-hidden">
+              <div ref={containerRef}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 auto-rows-min">
+                  {visibleLibrary.map((file) => (
+                    <FileCard
+                      key={file.id}
+                      file={file}
+                      type="myLibrary"
+                      onRefresh={fetchMyLibrary}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="w-80">
+            <FileUploadSection onUploadComplete={() => {
+              // 刷新两个网格
+              const libraryGrid = document.querySelector('.library-grid');
+              const myLibraryGrid = document.querySelector('.my-library-grid');
+              if (libraryGrid) libraryGrid.dispatchEvent(new Event('refresh'));
+              if (myLibraryGrid) myLibraryGrid.dispatchEvent(new Event('refresh'));
+            }} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

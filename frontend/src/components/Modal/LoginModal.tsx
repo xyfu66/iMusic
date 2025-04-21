@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { login } from '../services/AuthService';
+import { login } from '../../services/AuthService';
 import Modal from './Modal';
 import { useRecoilState } from 'recoil';
-import { userState } from '../state/userState';
+import { userState } from '../../state/userState';
 
 interface LoginModalProps {
   isOpen: boolean;

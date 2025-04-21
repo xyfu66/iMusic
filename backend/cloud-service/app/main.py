@@ -4,16 +4,18 @@ import base64
 import logging
 
 from pathlib import Path
-from fastapi import FastAPI, File, Form, UploadFile, WebSocket, Depends, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, WebSocket, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from datetime import datetime
+from sqlalchemy.sql import select, func
 
 from .utils import (
     preprocess_score,
     has_permission,
 )
+from .database import AsyncSession, get_async_db
 from .dependencies import get_current_user, get_db
 from .models import UploadedFile, User, UserRole, Role, Permission, RolePermission
 from .auth import (hash_password, verify_password, create_token, decode_token)  # Import hash_password if defined in utils
@@ -95,6 +97,10 @@ async def upload_file(
             audio_path=score_audio_path,  # 保存音频路径
             user_id=user.id,  # 使用当前用户的 ID
             is_public=is_public,
+            created_by=user.name,
+            updated_by=user.name,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
         db.add(uploaded_file)
         db.commit()
@@ -109,7 +115,7 @@ async def upload_file(
 
 # 公开文件接口
 @app.post("/cloud/publish/{file_id}")
-def publish_file(file_id: str, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
+def publish_file(file_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         # 检查文件是否存在
         uploaded_file = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
@@ -122,6 +128,8 @@ def publish_file(file_id: str, user_id: str = Depends(get_current_user), db: Ses
 
         # 更新文件的公开状态
         uploaded_file.is_public = True
+        uploaded_file.updated_by = user.id
+        uploaded_file.updated_at = datetime.now()
         db.commit()
 
         return success_response(data={}, message="File published successfully")
@@ -131,51 +139,104 @@ def publish_file(file_id: str, user_id: str = Depends(get_current_user), db: Ses
 
 # 曲目库浏览接口，所有曲目
 @app.get("/cloud/library")
-def get_library(db: Session = Depends(get_db)):
+async def get_library(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: AsyncSession = Depends(get_async_db)
+):
     """
-    返回所有公开的文件
+    获取公开乐谱库，支持分页
     """
     try:
-        public_files = db.query(UploadedFile).filter(UploadedFile.is_public == True).all()
-        if not public_files:
-            return success_response(data=[], message="No public files found")
-
-        result = [
+        # 查询公开文件总数
+        stmt = select(func.count()).select_from(UploadedFile).where(UploadedFile.is_public == True)
+        total = await db.scalar(stmt)
+        if total is None:
+            total = 0
+        
+        # 分页查询文件
+        stmt = (
+            select(UploadedFile)
+            .where(UploadedFile.is_public == True)
+            .order_by(UploadedFile.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await db.execute(stmt)
+        files = result.scalars().all()
+        
+        data = [
             {
-                "id": file.id,
-                "filename": file.filename,
-                "user_id": file.user_id,
-                "username": file.user.name,  # 添加上传者的用户名
-                "uploaded_at": file.created_at,
+                "id": f.id,
+                "filename": f.filename,
+                "user_id": f.user_id,
+                "username": f.created_by if f.created_by else None,
+                "created_at": f.created_at.isoformat() if f.created_at else None
             }
-            for file in public_files
+            for f in files
         ]
-        return success_response(data=result, message="Library fetched successfully")
+        
+        pagination = {
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size if total > 0 else 1
+        }
+        
+        return success_response(data=data, pagination=pagination, message="fetch library successfully.")
     except Exception as e:
         return error_response(message=f"Failed to fetch library: {str(e)}", status_code=500)
 
 
 # 我的曲谱接口
 @app.get("/cloud/my-library")
-def get_my_library(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_my_library(
+    current_user: User = Depends(get_current_user),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """
+    获取用户的乐谱库，支持分页
+    """
     try:
-        user_files = db.query(UploadedFile).filter(UploadedFile.user_id == user.id).all()
-        if not user_files:
-            return success_response(data=[], message="No files found for the current user")
-
-        result = [
+        # 查询用户文件总数
+        stmt = select(func.count()).select_from(UploadedFile).where(UploadedFile.user_id == current_user.id)
+        total = await db.scalar(stmt)
+        if total is None:
+            total = 0
+        
+        # 分页查询文件
+        stmt = (
+            select(UploadedFile)
+            .where(UploadedFile.user_id == current_user.id)
+            .order_by(UploadedFile.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await db.execute(stmt)
+        files = result.scalars().all()
+        
+        data = [
             {
-                "id": file.id,
-                "filename": file.filename,
-                "filepath": file.filepath,
-                "is_public": file.is_public,
-                "uploaded_at": file.created_at,
+                "id": f.id,
+                "filename": f.filename,
+                "created_at": f.created_at.isoformat() if f.created_at else None,
+                "is_public": f.is_public
             }
-            for file in user_files
+            for f in files
         ]
-        return success_response(data=result, message="User library fetched successfully")
+        
+        pagination = {
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size if total > 0 else 1
+        }
+        
+        return success_response(data=data, pagination=pagination, message="fetch my library successfully.")
     except Exception as e:
-        return error_response(message=f"Failed to fetch user library: {str(e)}", status_code=500)
+        return error_response(message=f"Failed to fetch my library: {str(e)}", status_code=500)
 
 
 # 选择曲目进行跟音练习
@@ -204,7 +265,7 @@ def practice(file_id: str, db: Session = Depends(get_db)):
                     "file_info": {
                         "id": uploaded_file.id,
                         "filename": uploaded_file.filename,
-                        "uploaded_at": uploaded_file.created_at,
+                        "created_at": uploaded_file.created_at,
                     },
                     "use_url": True,
                     "file_url": uploaded_file.filepath,
@@ -229,7 +290,7 @@ def practice(file_id: str, db: Session = Depends(get_db)):
                 "file_info": {
                     "id": uploaded_file.id,
                     "filename": uploaded_file.filename,
-                    "uploaded_at": uploaded_file.created_at,
+                    "created_at": uploaded_file.created_at,
                 },
                 "use_url": False,
                 "file_content": file_content,
