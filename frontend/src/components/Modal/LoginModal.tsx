@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { login } from '../../services/AuthService';
 import Modal from './Modal';
-import { useRecoilState } from 'recoil';
-import { userState } from '../../state/userState';
+import { useUserState } from '../../state/userState';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,7 +11,7 @@ interface LoginModalProps {
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [user, setUser] = useRecoilState(userState);
+  const [userState, setUserState] = useUserState();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +20,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       if (response.success) {
         const { userId, username, token, roles, permissions } = response.data;
         localStorage.setItem('token', token);
-        setUser({
+        setUserState({
           userId,
           username,
           token,

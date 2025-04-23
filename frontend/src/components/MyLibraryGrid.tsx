@@ -60,14 +60,6 @@ const MyLibraryGrid = forwardRef<any, MyLibraryGridProps>(({ onShowMore, onUploa
     );
   }
 
-  if (myLibrary.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-48 text-gray-500">
-        暂无乐谱，请上传文件。
-      </div>
-    );
-  }
-
   const visibleLibrary = myLibrary.slice(0, visibleCount);
 
   return (
@@ -75,7 +67,7 @@ const MyLibraryGrid = forwardRef<any, MyLibraryGridProps>(({ onShowMore, onUploa
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">My Library</h2>
-          {myLibrary.length > visibleCount && onShowMore && (
+          {myLibrary.length !== 0 && myLibrary.length > visibleCount && onShowMore && (
             <button
               onClick={onShowMore}
               className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
@@ -89,6 +81,11 @@ const MyLibraryGrid = forwardRef<any, MyLibraryGridProps>(({ onShowMore, onUploa
         </div>
         <div className="flex gap-6">
           <div className="flex-1 relative">
+            {myLibrary.length === 0 && (
+                <div className="flex justify-center items-center h-48 text-gray-500">
+                  暂无乐谱，请上传文件。
+                </div>
+            )}
             <div className="overflow-hidden">
               <div ref={containerRef}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 auto-rows-min">

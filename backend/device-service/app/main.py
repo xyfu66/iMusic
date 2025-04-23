@@ -35,23 +35,8 @@ if ENV == "development":
     debugpy.wait_for_client()
     print("Debugger attached!")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    upload_dir = Path("./uploads")
-    # Clean up at the start
-    if upload_dir.exists() and upload_dir.is_dir():
-        for file in upload_dir.iterdir():
-            if file.is_file():
-                file.unlink()
-    yield
-    # Clean up at the end
-    if upload_dir.exists() and upload_dir.is_dir():
-        for file in upload_dir.iterdir():
-            if file.is_file():
-                file.unlink()
 
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:50003", "http://127.0.0.1:50003"],

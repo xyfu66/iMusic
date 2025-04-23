@@ -23,6 +23,10 @@ from .RequestModel import LoginRequest, RegisterRequest, ChangePasswordRequest, 
 from .response_utils import success_response, error_response
 from .evaluator import PerformanceEvaluator
 from .utils import TEMP_DIR
+from .config import UPLOAD_DIR, init_config
+
+# 初始化配置
+init_config()
 
 # 创建评测器实例
 evaluator = PerformanceEvaluator()
@@ -78,21 +82,25 @@ async def upload_file(
     """
     try:
         file_id = str(uuid.uuid4())[:8]
-        upload_dir = Path("./uploads")
-        upload_dir.mkdir(exist_ok=True)
-
-        file_path = upload_dir / f"{file_id}_{file.filename}"
-        with open(file_path, "wb") as buffer:
+        
+        # 使用配置文件中的上传目录
+        file_path = UPLOAD_DIR / f"{file_id}_{file.filename}"
+        with open(str(file_path), "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         # 调用预处理函数
         score_midi_path, score_audio_path = preprocess_score(file_path)
 
+        # 统一处理所有路径
+        file_path = str(file_path)
+        score_midi_path = str(Path(score_midi_path))
+        score_audio_path = str(Path(score_audio_path))
+
         # 保存文件信息到数据库
         uploaded_file = UploadedFile(
             id=file_id,
             filename=file.filename,
-            filepath='./' + str(file_path),
+            filepath=file_path,
             midi_path=score_midi_path,  # 保存 MIDI 路径
             audio_path=score_audio_path,  # 保存音频路径
             user_id=user.id,  # 使用当前用户的 ID
@@ -526,17 +534,38 @@ def delete_file(file_id: str, user: User = Depends(get_current_user), db: Sessio
         if not (has_permission(user.id, "delete_file", db) or uploaded_file.user_id == user.id):
             raise HTTPException(status_code=403, detail="Permission denied")
 
-        # 删除文件记录
+        # 获取所有需要删除的文件路径
+        file_paths = [
+            Path(uploaded_file.filepath),  # 原始文件
+            Path(uploaded_file.midi_path),  # MIDI文件
+            Path(uploaded_file.audio_path)  # 音频文件
+        ]
+
+        # 记录要删除的文件路径
+        print(f"Attempting to delete files for file_id {file_id}:")
+        for file_path in file_paths:
+            print(f"  - {file_path} (exists: {file_path.exists()})")
+
+        # 删除所有相关文件
+        for file_path in file_paths:
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+                    print(f"Successfully deleted file: {file_path}")
+                else:
+                    print(f"File does not exist: {file_path}")
+            except Exception as e:
+                print(f"Failed to delete file {file_path}: {str(e)}")
+                # 继续删除其他文件，不中断流程
+
+        # 删除数据库记录
         db.delete(uploaded_file)
         db.commit()
-
-        # 删除文件本身
-        file_path = Path(uploaded_file.filepath)
-        if file_path.exists():
-            file_path.unlink()
+        print(f"Successfully deleted database record for file_id {file_id}")
 
         return success_response(message="File deleted successfully")
     except Exception as e:
+        print(f"Error in delete_file: {str(e)}")
         return error_response(message=f"Failed to delete file: {str(e)}", status_code=500)
 
 
@@ -564,5 +593,5 @@ async def evaluate_performance(file_id: str, audio_data: UploadFile, user: User 
         return result
 
     except Exception as e:
-        logging.error(f"评测过程发生错误: {str(e)}")
+        print(f"评测过程发生错误: {str(e)}")
         return {"success": False, "error": str(e)}

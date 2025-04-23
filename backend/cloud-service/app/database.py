@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from app.db_base import DATABASE_URL, Base, engine  # 使用从 db_base 导入的 Base
 import app.models  # 导入模块以注册所有模型
 from sqlalchemy.orm import Session
+from .config import DATABASE_URL
 
 # 同步引擎和会话
 engine = create_engine(DATABASE_URL)
@@ -17,7 +18,7 @@ async_engine = create_async_engine(
     pool_size=5,
     max_overflow=10,
     pool_timeout=30,
-    pool_recycle=1800
+    pool_recycle=1800,
 )
 
 async_session = async_sessionmaker(
@@ -25,7 +26,7 @@ async_session = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
     autocommit=False,
-    autoflush=False
+    autoflush=False,
 )
 
 async def get_async_db():

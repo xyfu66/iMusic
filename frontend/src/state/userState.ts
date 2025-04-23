@@ -1,4 +1,5 @@
-import { atom } from 'recoil';
+import { atom, useRecoilState } from 'recoil';
+import { useEffect } from 'react';
 
 export interface UserData {
   userId: string | null;
@@ -9,7 +10,7 @@ export interface UserData {
   isLoggedIn: boolean; // 登录状态
 }
 
-export const userState = atom<UserData>({
+const userStateAtom = atom<UserData>({
   key: 'userState',
   default: {
     userId: null,
@@ -20,3 +21,17 @@ export const userState = atom<UserData>({
     isLoggedIn: false,
   },
 });
+
+export const useUserState = () => {
+  const [userState, setUserState] = useRecoilState(userStateAtom);
+  
+  useEffect(() => {
+    // 从 localStorage 恢复状态
+    const savedState = localStorage.getItem('userState');
+    if (savedState) {
+      setUserState(JSON.parse(savedState));
+    }
+  }, []);
+
+  return [userState, setUserState] as const;
+};

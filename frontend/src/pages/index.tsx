@@ -6,14 +6,13 @@ import RegisterModal from '../components/Modal/RegisterModal';
 import LibraryModal from '../components/Modal/LibraryModal';
 import { useRouter } from 'next/router';
 import { getCloudBackendUrl } from '../utils/common';
-import { useRecoilState } from 'recoil';
-import { userState } from '../state/userState';
+import { useUserState } from '../state/userState';
 
 const BE_Url_Cloud = getCloudBackendUrl();
 
 const IndexPage: React.FC = () => {
   const router = useRouter();
-  const [user, setUser] = useRecoilState(userState);
+  const [userState, setUserState] = useUserState();
   const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [showMyLibraryModal, setShowMyLibraryModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -35,7 +34,7 @@ const IndexPage: React.FC = () => {
         const data = await response.json();
 
         if (data.success) {
-          setUser({
+          setUserState({
             userId: data.data.userId,
             username: data.data.username,
             token,
@@ -45,7 +44,7 @@ const IndexPage: React.FC = () => {
           });
         } else {
           localStorage.removeItem('token');
-          setUser({
+          setUserState({
             userId: null,
             username: null,
             token: null,
@@ -60,7 +59,7 @@ const IndexPage: React.FC = () => {
     };
 
     checkLoginStatus();
-  }, [setUser]);
+  }, [setUserState]);
 
   const refresh = () => {
     if (libraryGridRef.current) {
@@ -76,7 +75,7 @@ const IndexPage: React.FC = () => {
       <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
         <h1 className="text-xl font-bold">Score Following App</h1>
         <div>
-          {!user.isLoggedIn ? (
+          {!userState.isLoggedIn ? (
             <>
               <button
                 onClick={() => setIsRegisterOpen(true)}
@@ -93,11 +92,11 @@ const IndexPage: React.FC = () => {
             </>
           ) : (
             <div className="flex items-center space-x-4">
-              <span>Welcome, {user.username}</span>
+              <span>Welcome, {userState.username}</span>
               <button
                 onClick={() => {
                   localStorage.removeItem('token');
-                  setUser({
+                  setUserState({
                     userId: null,
                     username: null,
                     token: null,
@@ -148,7 +147,7 @@ const IndexPage: React.FC = () => {
       />
 
       {/* 我的曲目区域 */}
-      {user.isLoggedIn && (
+      {userState.isLoggedIn && (
         <MyLibraryGrid 
           ref={myLibraryGridRef}
           onShowMore={() => setShowMyLibraryModal(true)}

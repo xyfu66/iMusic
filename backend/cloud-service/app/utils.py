@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models import User, Permission, UserRole, RolePermission
 from app.auth import hash_password
 from app.common import GetFileType
-
+from app.config import UPLOAD_DIR
 # 创建临时目录
 TEMP_DIR = Path(tempfile.gettempdir()) / "score_evaluation"
 TEMP_DIR.mkdir(exist_ok=True)
@@ -56,10 +56,10 @@ def preprocess_score(score_xml: Path) -> tuple[str, str]:
     """
     score_obj = partitura.load_musicxml(score_xml)
 
-    score_midi_path = f"./uploads/{score_xml.stem}.mid"
+    score_midi_path = UPLOAD_DIR / f"{score_xml.stem}.mid"
     partitura.save_score_midi(score_obj, score_midi_path)
 
-    score_audio_path = f"./uploads/{score_xml.stem}.wav"
+    score_audio_path = UPLOAD_DIR / f"{score_xml.stem}.wav"
     partitura.save_wav_fluidsynth(score_obj, score_audio_path)
 
     return score_midi_path, score_audio_path
