@@ -1,6 +1,5 @@
-import { getCloudBackendUrl } from '../utils/common';
+import { BE_Url_Cloud } from '../utils/common';
 
-const BE_Url_Cloud = getCloudBackendUrl();
 
 export const api = {
   // 获取乐谱库

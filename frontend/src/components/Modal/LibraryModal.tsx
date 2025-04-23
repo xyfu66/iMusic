@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCloudBackendUrl } from '../../utils/common';
+import { BE_Url_Cloud } from '../../utils/common';
 import FileCard from '../FileCard';
 
 interface LibraryModalProps {
@@ -22,8 +22,6 @@ const LibraryModal: React.FC<LibraryModalProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const pageSize = 10;
-
-  const BE_Url_Cloud = getCloudBackendUrl();
 
   useEffect(() => {
     if (isOpen) {

@@ -4,15 +4,13 @@ import CustomAudioPlayer from '../components/CustomAudioPlayer';
 import AudioInputVisualizer from '../components/AudioInputVisualizer';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { AudioPlayerRef } from '../components/CustomAudioPlayer';
-import { decodeBase64, FileType, getCloudBackendUrl, getDeviceBackendUrl, getFileUrl } from '../utils/common'; // 导入共通方法
+import { decodeBase64, FileType, BE_Url_Local, BE_Url_Cloud, getFileUrl } from '../utils/common'; // 导入共通方法
 import { useRecoilValue } from 'recoil';
 import { practiceState } from '../state/practiceState';
 import { useAudioDevices } from '../hooks/useAudioDevices';
 import { Menu } from '@headlessui/react';
 
 
-const BE_Url_Local = getDeviceBackendUrl();
-const BE_Url_Cloud = getCloudBackendUrl();
 const MIDI = 'MIDI';
 const AUDIO = 'Audio';
 

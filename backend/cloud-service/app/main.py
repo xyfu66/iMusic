@@ -19,7 +19,7 @@ from .database import AsyncSession, get_async_db
 from .dependencies import get_current_user, get_db
 from .models import UploadedFile, User, UserRole, Role, Permission, RolePermission
 from .auth import (hash_password, verify_password, create_token, decode_token)  # Import hash_password if defined in utils
-from .RequestModel import LoginRequest, RegisterRequest, ChangePasswordRequest, ManagePermissionRequest
+from .RequestModel import LoginRequest, RegisterRequest, ChangePasswordRequest, ManagePermissionRequest, UpdateVisibilityRequest
 from .response_utils import success_response, error_response
 from .evaluator import PerformanceEvaluator
 from .utils import TEMP_DIR
@@ -421,32 +421,40 @@ def manage_permission(user_id: str, request: ManagePermissionRequest, current_us
         return error_response(message=f"Failed to manage permission: {str(e)}", status_code=500)
     
 
-@app.patch("/cloud/update-visibility/{file_id}")
+@app.put("/cloud/update-visibility")
 def update_visibility(
-    file_id: str,
-    is_public: bool,
-    user_id: str = Depends(get_current_user),
+    request: UpdateVisibilityRequest, 
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     更新文件的公开状态
     """
     try:
-        # 检查当前用户是否有权限
-        if not has_permission(user_id, "manage_files", db):
-            raise HTTPException(status_code=403, detail="Permission denied")
-
         # 查找文件
-        uploaded_file = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
+        uploaded_file = db.query(UploadedFile).filter(UploadedFile.id == request.file_id).first()
         if not uploaded_file:
             raise HTTPException(status_code=404, detail="File not found")
+        
+
+        # 检查权限：用户是否有管理权限或是文件的上传者
+        if not (has_permission(current_user.id, "delete_file", db) or uploaded_file.user_id == current_user.id):
+            print(f"Permission denied.")
+            raise HTTPException(status_code=403, detail="Permission denied")
+        
 
         # 更新文件的公开状态
-        uploaded_file.is_public = is_public
+        uploaded_file.is_public = request.is_public
+        uploaded_file.updated_by = current_user.id
+        uploaded_file.updated_at = func.now()
+        
         db.commit()
+        print("Successfully updated file visibility")
 
         return success_response(data={}, message="File visibility updated successfully")
+
     except Exception as e:
+        print(f"Error updating visibility: {str(e)}")
         return error_response(message=f"Failed to update visibility: {str(e)}", status_code=500)
 
 

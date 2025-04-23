@@ -76,8 +76,8 @@ def seed_roles(db: Session):
 def seed_role_permissions(db: Session):
     role_permissions = {
         "user": ["upload_file"],
-        "admin": ["upload_file", "delete_file"],
-        "super_admin": ["upload_file", "delete_file", "manage_users"],
+        "admin": ["upload_file", "delete_file", "manage_files"],
+        "super_admin": ["upload_file", "delete_file", "manage_files", "manage_users"],
     }
     for role_name, permission_names in role_permissions.items():
         role = db.query(app.models.Role).filter(app.models.Role.name == role_name).first()

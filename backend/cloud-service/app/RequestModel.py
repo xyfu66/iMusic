@@ -17,4 +17,8 @@ class ChangePasswordRequest(BaseModel):
 
 
 class ManagePermissionRequest(BaseModel):
-    new_permission_level: int    
+    new_permission_level: int
+
+class UpdateVisibilityRequest(BaseModel):
+    file_id: str
+    is_public: bool

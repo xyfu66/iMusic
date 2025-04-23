@@ -1,6 +1,5 @@
-import { getDeviceBackendUrl } from '../utils/common'; 
+import { BE_Url_Local } from '../utils/common'; 
 
-const BE_Url_Local = getDeviceBackendUrl();
 
 export interface AudioDevice {
   index: number;

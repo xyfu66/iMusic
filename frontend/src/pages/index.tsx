@@ -5,10 +5,8 @@ import LoginModal from '../components/Modal/LoginModal';
 import RegisterModal from '../components/Modal/RegisterModal';
 import LibraryModal from '../components/Modal/LibraryModal';
 import { useRouter } from 'next/router';
-import { getCloudBackendUrl } from '../utils/common';
+import { BE_Url_Cloud } from '../utils/common';
 import { useUserState } from '../state/userState';
-
-const BE_Url_Cloud = getCloudBackendUrl();
 
 const IndexPage: React.FC = () => {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getCloudBackendUrl } from '../utils/common';
+import { BE_Url_Cloud } from '../utils/common';
 
 interface FileUploadSectionProps {
   onUploadComplete: () => void;
@@ -28,7 +28,7 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({ onUploadComplete 
       formData.append('file', file);
       formData.append('is_public', isPublic.toString());
 
-      const response = await fetch(`${getCloudBackendUrl()}/upload`, {
+      const response = await fetch(`${BE_Url_Cloud}/upload`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,

@@ -23,7 +23,7 @@ export const decodeBase64 = (base64Data: string, mimeType: string = ''): Blob | 
  * 获取云服务后台地址，根据环境区分调试和生产环境。
  * @returns 后台服务的基础 URL。
  */
-export const getCloudBackendUrl = (): string => {
+const getCloudBackendUrl = (): string => {
   const isDebug = process.env.NODE_ENV === 'development'; // 判断是否为开发环境
   const cloudBackendUrl = (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101') + '/cloud';
   const productionBackendUrl = 'https://api.production.com/cloud'; // 替换为生产环境的实际地址
@@ -35,7 +35,7 @@ export const getCloudBackendUrl = (): string => {
  * 获取云服务后台地址，根据环境区分调试和生产环境。
  * @returns 后台服务的基础 URL。
  */
-export const getDeviceBackendUrl = (): string => {
+const getDeviceBackendUrl = (): string => {
   const isDebug = process.env.NODE_ENV === 'development'; // 判断是否为开发环境
   const cloudBackendUrl = (process.env.NEXT_LOCAL_BACKEND_URL || 'http://localhost:8201') + '/local';
   const productionBackendUrl = 'https://api.production.com/local'; // 替换为生产环境的实际地址
@@ -86,3 +86,5 @@ export enum FileType {
 }
 
 
+export const BE_Url_Cloud = getCloudBackendUrl();
+export const BE_Url_Local = getDeviceBackendUrl();
