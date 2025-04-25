@@ -165,6 +165,7 @@ async def run_score_following(file_id: str, input_type: str, is_performce_model:
             score_file = score_file,
             performance_file = performance_file,
             input_type = actual_input_type,
+            frame_rate = 86,
         )
     else:
         # 使用特定输入设备进行测试
@@ -172,6 +173,7 @@ async def run_score_following(file_id: str, input_type: str, is_performce_model:
             score_file = score_file,
             input_type = actual_input_type,
             device_name_or_index = device,
+            frame_rate = 86,
         )
 
     try:

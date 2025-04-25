@@ -17,15 +17,20 @@ const violinTuningNotes: TuningNote[] = [
 const ViolinTuner: React.FC = () => {
   const [currentFrequency, setCurrentFrequency] = useState<number | null>(null);
   const [selectedString, setSelectedString] = useState<string>('G');
-  const [isListening, setIsListening] = useState<boolean>(false);
   const [deviation, setDeviation] = useState<number | null>(null);
   const [isInTune, setIsInTune] = useState<boolean | null>(null);
+  const [hasAudioInput, setHasAudioInput] = useState<boolean>(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    // 组件挂载时自动开始检测
+    startPitchDetection();
+
+    // 组件卸载时清理
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
+        console.log('wsRef.current.close');
       }
     };
   }, []);
@@ -35,24 +40,23 @@ const ViolinTuner: React.FC = () => {
       wsRef.current.close();
     }
 
-    // 连接到设备服务的 WebSocket
     const ws = new WebSocket(BE_Url_Local.replace(/^http/, 'ws') + '/ws/tuner/violin');
     wsRef.current = ws;
 
     ws.onopen = () => {
       console.log('Violin tuner WebSocket connected');
-      setIsListening(true);
     };
 
     ws.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
         if (data.frequency) {
+          setHasAudioInput(true);
           setCurrentFrequency(data.frequency);
           const targetFrequency = violinTuningNotes.find(note => note.string === selectedString)?.frequency!;
           const currentDeviation = data.frequency - targetFrequency;
           setDeviation(currentDeviation);
-          setIsInTune(Math.abs(currentDeviation) < 1); // 允许1Hz的误差
+          setIsInTune(Math.abs(currentDeviation) < 1);
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
@@ -61,25 +65,11 @@ const ViolinTuner: React.FC = () => {
 
     ws.onerror = (error: Event) => {
       console.error('WebSocket error:', error);
-      setIsListening(false);
     };
 
     ws.onclose = () => {
       console.log('WebSocket closed');
-      setIsListening(false);
     };
-  };
-
-  const stopPitchDetection = () => {
-    if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ action: 'stop' }));
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    setIsListening(false);
-    setCurrentFrequency(null);
-    setDeviation(null);
-    setIsInTune(null);
   };
 
   const getDeviationColor = () => {
@@ -97,34 +87,38 @@ const ViolinTuner: React.FC = () => {
 
   return (
     <div className="p-4 max-w-md mx-auto">
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">选择琴弦:</label>
-        <select
-          value={selectedString}
-          onChange={(e) => setSelectedString(e.target.value)}
-          className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
-          disabled={isListening}
-        >
-          {violinTuningNotes.map((note) => (
-            <option key={note.string} value={note.string}>
-              {note.string}弦 ({note.note} - {note.frequency} Hz)
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mb-4">
-        <button
-          onClick={isListening ? stopPitchDetection : startPitchDetection}
-          className={`w-full py-2 px-4 rounded-md text-white font-bold ${
-            isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
-          } transition-colors duration-200`}
-        >
-          {isListening ? '停止检测' : '开始检测'}
-        </button>
+      <div className="mb-8">
+        <div className="relative h-48">
+          {/* 小提琴弦的视觉展示 */}
+          <div className="absolute inset-0 flex flex-col justify-between">
+            {violinTuningNotes.map((note, index) => (
+              <div
+                key={note.string}
+                className={`flex items-center justify-between h-12 px-4 rounded-lg transition-all duration-200 ${
+                  selectedString === note.string ? 'bg-blue-100' : 'bg-gray-100'
+                }`}
+                onClick={() => setSelectedString(note.string)}
+              >
+                <div className="flex items-center">
+                  <div className="w-2 h-8 bg-gray-800 rounded-full mr-4"></div>
+                  <span className="text-lg font-bold">{note.string}弦</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {note.note} ({note.frequency} Hz)
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="text-center space-y-4">
+        {!hasAudioInput && (
+          <div className="text-yellow-600 bg-yellow-100 p-4 rounded-lg">
+            未检测到音频输入，请确保麦克风已连接并允许访问
+          </div>
+        )}
+
         <div className="text-2xl font-bold">
           {currentFrequency ? `${currentFrequency.toFixed(2)} Hz` : '-- Hz'}
         </div>

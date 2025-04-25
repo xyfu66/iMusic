@@ -213,7 +213,7 @@ async def violin_tuner(websocket: WebSocket):
         audio_stream = stream
 
         # 开始音高检测循环
-        while True:
+        while websocket.client_state == WebSocketState.CONNECTED:
             try:
                 # 读取音频数据
                 data = stream.read(1024, exception_on_overflow=False)
@@ -231,7 +231,7 @@ async def violin_tuner(websocket: WebSocket):
                     freqs = librosa.fft_frequencies(sr=44100, n_fft=2048)
                     frequency = freqs[max_freq_idx[-1]]
 
-                    if frequency > 0:
+                    if frequency > 0 and websocket.client_state == WebSocketState.CONNECTED:
                         # 发送频率数据
                         await websocket.send_json({
                             "frequency": float(frequency),
@@ -240,10 +240,11 @@ async def violin_tuner(websocket: WebSocket):
 
                 # 检查是否有停止信号
                 try:
-                    data = await websocket.receive_json(timeout=0.01)
+                    data = await websocket.receive_json()
                     if data.get("action") == "stop":
                         break
-                except asyncio.TimeoutError:
+                except:
+                    # 如果没有收到消息，继续循环
                     pass
 
                 await asyncio.sleep(0.01)
