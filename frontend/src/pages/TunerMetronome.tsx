@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAudioDevices } from '../hooks/useAudioDevices';
 import ViolinTuner from '../components/Tuner/ViolinTuner';
+import Metronome from '../components/Metronome/Metronome';
+import AudioDeviceSelector from '../components/AudioDeviceSelector';
 
 const TunerMetronome: React.FC = () => {
   const router = useRouter();
   const { tab } = router.query; // 获取路由参数
   const { audioDevices, selectedAudioDevice, setSelectedAudioDevice } = useAudioDevices();
 
-  const [activeTab, setActiveTab] = useState<'Tuner' | 'Metronome'>('Tuner');
+  const [activeTab, setActiveTab] = useState<'Tuner' | 'Metronome' | null>(null);
   const [instrument, setInstrument] = useState<string>('Violin');
 
   useEffect(() => {
@@ -63,20 +65,14 @@ const TunerMetronome: React.FC = () => {
 
       {activeTab === 'Tuner' && (
         <div className="p-4">
-          <h2 className="text-center text-xl font-bold">调音器</h2>
+
           <div className="mt-4">
             <label className="block text-gray-700">选择音源设备:</label>
-            <select
-              value={selectedAudioDevice}
-              onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
-              className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
-            >
-              {audioDevices.map((device, index) => (
-                <option key={index} value={device.index}>
-                  {device.name || `Audio Device ${index + 1}`}
-                </option>
-              ))}
-            </select>
+            <AudioDeviceSelector
+              audioDevices={audioDevices}
+              selectedAudioDevice={selectedAudioDevice}
+              setSelectedAudioDevice={setSelectedAudioDevice}
+            />
           </div>
 
           <div className="mt-4">
@@ -99,10 +95,7 @@ const TunerMetronome: React.FC = () => {
       )}
 
       {activeTab === 'Metronome' && (
-        <div className="p-4">
-          <h2 className="text-center text-xl font-bold">节拍器</h2>
-          <p className="text-center text-gray-600">节拍器功能开发中...</p>
-        </div>
+        <Metronome />
       )}
     </div>
   );

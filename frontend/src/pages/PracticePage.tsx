@@ -9,6 +9,7 @@ import { useRecoilValue } from 'recoil';
 import { practiceState } from '../state/practiceState';
 import { useAudioDevices } from '../hooks/useAudioDevices';
 import { Menu } from '@headlessui/react';
+import AudioDeviceSelector from '../components/AudioDeviceSelector';
 
 
 const MIDI = 'MIDI';
@@ -437,17 +438,11 @@ const PracticePage: React.FC = () => {
                 {inputType === AUDIO && (
                   <div className="flex space-x-4 items-center">
                     <div className="w-64">
-                      <select
-                        value={selectedAudioDevice}
-                        onChange={(e) => setSelectedAudioDevice(Number(e.target.value))}
-                        className="w-full px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
-                      >
-                        {audioDevices.map((device, index) => (
-                          <option key={index} value={device.index}>
-                            {device.name || `Audio Device ${index + 1}`}
-                          </option>
-                        ))}
-                      </select>
+                      <AudioDeviceSelector
+                        audioDevices={audioDevices}
+                        selectedAudioDevice={selectedAudioDevice}
+                        setSelectedAudioDevice={setSelectedAudioDevice}
+                      />
                     </div>
                     <div>
                       {inputType === AUDIO && (

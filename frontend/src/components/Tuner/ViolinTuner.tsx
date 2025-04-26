@@ -33,7 +33,7 @@ const ViolinTuner: React.FC<TunerProps> = ({ selectedAudioDevice }) => {
   useEffect(() => {
     startPitchDetection();
     return () => {
-      if (wsRef.current) {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ action: "stop" }));
         wsRef.current.close();
       }
@@ -126,12 +126,6 @@ const ViolinTuner: React.FC<TunerProps> = ({ selectedAudioDevice }) => {
     if (deviation === null) return '';
     if (Math.abs(deviation) < 1) return '✓';
     return deviation > 0 ? '↑' : '↓';
-  };
-
-  const getDeviationPercentage = () => {
-    if (deviation === null) return 0;
-    const targetFrequency = violinTuningNotes.find(note => note.string === selectedString)?.frequency!;
-    return (Math.abs(deviation) / targetFrequency) * 100;
   };
 
   return (
