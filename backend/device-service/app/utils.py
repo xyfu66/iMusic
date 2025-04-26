@@ -1,21 +1,26 @@
 import logging
 import traceback
-from pathlib import Path
-from typing import Optional
 import tempfile
 import shutil
-from datetime import datetime
-
+import asyncio
+import math
 import mido
 import partitura
 import pyaudio
 import aiohttp
 import os
+
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
 from matchmaker import Matchmaker
 from partitura.score import Part
+from fastapi import WebSocket
+from starlette.websockets import WebSocketState
 
 from .position_manager import position_manager
 from .common import GetFileType
+
 # 添加 cloud-service 的 URL
 CLOUD_SERVICE_URL = os.getenv('NEXT_CLOUD_BACKEND_URL', 'http://localhost:8101')
 
@@ -188,5 +193,34 @@ async def run_score_following(file_id: str, input_type: str, is_performce_model:
         traceback.print_exc()
         return {"error": str(e)}
 
+
+async def listen_for_stop(websocket: WebSocket) -> bool:
+    """监听停止信号的协程函数"""
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if data.get("action") == "stop":
+                print("[DEBUG] Received stop signal")
+                return True
+    except Exception as e:
+        print(f"[DEBUG] Error in stop listener: {e}")
+        return True
+
+async def update_position(file_id, websocket: WebSocket):
+    prev_position = 0
+    iteration_count = 0
+    try:
+        while websocket.client_state == WebSocketState.CONNECTED:
+            current_position = position_manager.get_position(file_id)
+            iteration_count += 1
+            print(f"[DEBUG] Iteration {iteration_count}: Current position: {current_position}")
+            
+            if not math.isclose(current_position, prev_position, abs_tol=0.001):
+                await websocket.send_json({"beat_position": current_position})
+                prev_position = current_position
+
+            await asyncio.sleep(0.1)
+    except Exception as e:
+        print(f"[DEBUG] Error in position updater: {e}")
 
 

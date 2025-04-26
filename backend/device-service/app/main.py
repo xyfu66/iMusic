@@ -1,17 +1,10 @@
 import asyncio
-import math
 import warnings
 import debugpy
 import os
-import numpy as np
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager
-from datetime import datetime
-from pathlib import Path
 from fastapi import WebSocket, WebSocketDisconnect
-from typing import Dict, Optional
-import pyaudio
-import librosa
+from app.tuner.pitch_detector import PitchDetector
 
 warnings.filterwarnings("ignore", module="partitura")
 
@@ -25,6 +18,8 @@ from .utils import (
     get_midi_devices,
     run_score_following,
     cleanup_temp_files,
+    listen_for_stop,
+    update_position,
 )
 
 # 在 FastAPI 应用启动前添加
@@ -85,34 +80,6 @@ async def websocket_endpoint(websocket: WebSocket):
     tasks = []  # 存储所有需要管理的任务
     main_task = None
     
-    async def listen_for_stop():
-        try:
-            while True:
-                data = await websocket.receive_json()
-                if data.get("action") == "stop":
-                    print("[DEBUG] Received stop signal")
-                    return True
-        except Exception as e:
-            print(f"[DEBUG] Error in stop listener: {e}")
-            return True
-
-    async def update_position(file_id):
-        prev_position = 0
-        iteration_count = 0
-        try:
-            while websocket.client_state == WebSocketState.CONNECTED:
-                current_position = position_manager.get_position(file_id)
-                iteration_count += 1
-                print(f"[DEBUG] Iteration {iteration_count}: Current position: {current_position}")
-                
-                if not math.isclose(current_position, prev_position, abs_tol=0.001):
-                    await websocket.send_json({"beat_position": current_position})
-                    prev_position = current_position
-
-                await asyncio.sleep(0.1)
-        except Exception as e:
-            print(f"[DEBUG] Error in position updater: {e}")
-
     try:
         position_manager.reset()
         await websocket.accept()
@@ -194,76 +161,45 @@ async def violin_tuner(websocket: WebSocket):
     """
     小提琴调音器的WebSocket端点
     """
-    audio_stream = None
-    p = None
-    
+    pitch_detection_task = None
+
     try:
         await websocket.accept()
         print("[DEBUG] Violin tuner WebSocket connected")
-        
-        # 初始化音频流
-        p = pyaudio.PyAudio()
-        stream = p.open(
-            format=pyaudio.paFloat32,
-            channels=1,
-            rate=44100,
-            input=True,
-            frames_per_buffer=1024,
+
+        # 等待接收设备索引
+        data = await websocket.receive_json()
+        device_index = data.get("device_index", 0)
+        print(f"[DEBUG] Using audio device index: {device_index}")
+
+        # 初始化音高检测器
+        pitch_detector = PitchDetector()
+        pitch_detector.initialize_stream(device_index)
+
+        # 创建音高检测任务
+        pitch_detection_task = asyncio.create_task(
+            pitch_detector.detect_pitch(websocket)
         )
-        audio_stream = stream
 
-        # 开始音高检测循环
-        while websocket.client_state == WebSocketState.CONNECTED:
-            try:
-                # 读取音频数据
-                data = stream.read(1024, exception_on_overflow=False)
-                samples = np.frombuffer(data, dtype=np.float32)
+        # 等待音高检测任务完成
+        await pitch_detection_task
 
-                # 使用librosa检测音高
-                if len(samples) > 0:
-                    # 计算短时傅里叶变换
-                    D = librosa.stft(samples, n_fft=2048, hop_length=512)
-                    # 计算频谱
-                    S = np.abs(D)
-                    # 找到最大幅度的频率
-                    max_freq_idx = np.argmax(S, axis=0)
-                    # 转换为频率
-                    freqs = librosa.fft_frequencies(sr=44100, n_fft=2048)
-                    frequency = freqs[max_freq_idx[-1]]
-
-                    if frequency > 0 and websocket.client_state == WebSocketState.CONNECTED:
-                        # 发送频率数据
-                        await websocket.send_json({
-                            "frequency": float(frequency),
-                            "timestamp": datetime.now().isoformat()
-                        })
-
-                # 检查是否有停止信号
-                try:
-                    data = await websocket.receive_json()
-                    if data.get("action") == "stop":
-                        break
-                except:
-                    # 如果没有收到消息，继续循环
-                    pass
-
-                await asyncio.sleep(0.01)
-
-            except Exception as e:
-                print(f"[DEBUG] Error in pitch detection loop: {e}")
-                break
-
+    except WebSocketDisconnect:
+        print("[DEBUG] WebSocket disconnected")
     except Exception as e:
         print(f"[DEBUG] WebSocket error: {e}")
         if websocket.client_state == WebSocketState.CONNECTED:
             await websocket.send_json({"error": str(e)})
     finally:
         # 清理资源
-        if audio_stream:
-            audio_stream.stop_stream()
-            audio_stream.close()
-        if p:
-            p.terminate()
+        if pitch_detection_task:
+            pitch_detection_task.cancel()
+            try:
+                await pitch_detection_task
+            except asyncio.CancelledError:
+                pass
+        if pitch_detector:
+            pitch_detector.cleanup()
         if websocket.client_state == WebSocketState.CONNECTED:
             await websocket.close()
         print("[DEBUG] Violin tuner WebSocket closed")

@@ -23,7 +23,7 @@ const TunerMetronome: React.FC = () => {
   const renderTuner = () => {
     switch (instrument) {
       case 'Violin':
-        return <ViolinTuner />;
+        return <ViolinTuner selectedAudioDevice={selectedAudioDevice} />;
       // 其他乐器可以在这里添加对应的组件
       default:
         return <p className="text-center text-gray-600">该乐器的调音器尚未开发。</p>;
