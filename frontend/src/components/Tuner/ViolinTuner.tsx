@@ -34,6 +34,7 @@ const ViolinTuner: React.FC<TunerProps> = ({ selectedAudioDevice }) => {
     startPitchDetection();
     return () => {
       if (wsRef.current) {
+        wsRef.current.send(JSON.stringify({ action: "stop" }));
         wsRef.current.close();
       }
       if (noSoundTimer.current) {

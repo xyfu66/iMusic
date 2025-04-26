@@ -161,7 +161,18 @@ async def violin_tuner(websocket: WebSocket):
     """
     小提琴调音器的WebSocket端点
     """
-    pitch_detection_task = None
+    tasks = []
+
+    async def listen_for_stop():
+        try:
+            while True:
+                data = await websocket.receive_json()
+                if data.get("action") == "stop":
+                    print("[DEBUG] Received stop signal")
+                    return True
+        except WebSocketDisconnect:
+            print("[DEBUG] WebSocket disconnected")
+            return True
 
     try:
         await websocket.accept()
@@ -181,11 +192,37 @@ async def violin_tuner(websocket: WebSocket):
             pitch_detector.detect_pitch(websocket)
         )
 
-        # 等待音高检测任务完成
-        await pitch_detection_task
+        # 创建停止信号监听任务
+        stop_listener = asyncio.create_task(listen_for_stop())
+        tasks.extend([pitch_detection_task, stop_listener])
 
-    except WebSocketDisconnect:
-        print("[DEBUG] WebSocket disconnected")
+        # 等待任意一个任务完成
+        done, pending = await asyncio.wait(
+            tasks,
+            return_when=asyncio.FIRST_COMPLETED
+        )
+
+        # 如果是停止信号或者出错，取消所有任务
+        should_stop = any(
+            t in done and (
+                (t == stop_listener and t.result())  # 停止信号
+            )
+            for t in done
+        )
+
+        if should_stop:
+            print("[DEBUG] Stopping all tasks...")
+            # 取消所有未完成的任务
+            for task in pending:
+                if not task.done():
+                    task.cancel()
+            # 取消音高检测任务
+            if not pitch_detection_task.done():
+                pitch_detection_task.cancel()
+
+            # 等待所有任务完成取消
+            await asyncio.gather(*pending, return_exceptions=True)
+
     except Exception as e:
         print(f"[DEBUG] WebSocket error: {e}")
         if websocket.client_state == WebSocketState.CONNECTED:
