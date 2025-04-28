@@ -24,10 +24,11 @@ export const decodeBase64 = (base64Data: string, mimeType: string = ''): Blob | 
  * @returns 后台服务的基础 URL。
  */
 const getCloudBackendUrl = (): string => {
-  const isDebug = process.env.NODE_ENV === 'development'; // 判断是否为开发环境
-  const cloudBackendUrl = (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101') + '/cloud';
-  const productionBackendUrl = 'https://api.production.com/cloud'; // 替换为生产环境的实际地址
-
+  const isDebug = process.env.NODE_ENV === 'development';
+  const isAndroid = getEnvironment() === 'Android';
+  const baseUrl = isAndroid ? 'http://10.0.2.2:8101' : (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101');
+  const cloudBackendUrl = baseUrl + '/cloud';
+  const productionBackendUrl = 'https://api.production.com/cloud';
   return isDebug ? cloudBackendUrl : productionBackendUrl;
 };
 
@@ -36,10 +37,11 @@ const getCloudBackendUrl = (): string => {
  * @returns 后台服务的基础 URL。
  */
 const getDeviceBackendUrl = (): string => {
-  const isDebug = process.env.NODE_ENV === 'development'; // 判断是否为开发环境
-  const cloudBackendUrl = (process.env.NEXT_LOCAL_BACKEND_URL || 'http://localhost:8201') + '/local';
-  const productionBackendUrl = 'https://api.production.com/local'; // 替换为生产环境的实际地址
-
+  const isDebug = process.env.NODE_ENV === 'development';
+  const isAndroid = getEnvironment() === 'Android';
+  const baseUrl = isAndroid ? 'http://10.0.2.2:8201' : (process.env.NEXT_LOCAL_BACKEND_URL || 'http://localhost:8201');
+  const cloudBackendUrl = baseUrl + '/local';
+  const productionBackendUrl = 'https://api.production.com/local';
   return isDebug ? cloudBackendUrl : productionBackendUrl;
 };
 
