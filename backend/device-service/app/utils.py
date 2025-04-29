@@ -9,6 +9,7 @@ import partitura
 import pyaudio
 import aiohttp
 import os
+import platform
 
 from datetime import datetime
 from pathlib import Path
@@ -21,8 +22,34 @@ from starlette.websockets import WebSocketState
 from .position_manager import position_manager
 from .common import GetFileType
 
-# 添加 cloud-service 的 URL
-CLOUD_SERVICE_URL = os.getenv('NEXT_CLOUD_BACKEND_URL', 'http://localhost:8101')
+# 打印所有环境信息
+print("Environment Information:")
+print(f"NODE_ENV: {os.getenv('NODE_ENV', 'not set')}")
+print(f"IS_ANDROID: {os.getenv('IS_ANDROID', 'not set')}")
+print(f"Platform: {platform.system()}")
+
+# 获取环境变量
+ENV = os.getenv('NODE_ENV', 'development')
+IS_ANDROID = os.getenv('IS_ANDROID', 'false').lower() == 'true'
+IS_WINDOWS = platform.system().lower() == 'windows'
+
+# 根据环境设置 cloud-service 的 URL
+if ENV == 'development':
+    if IS_ANDROID:
+        # Android 模拟器环境
+        CLOUD_SERVICE_URL = os.getenv('NEXT_CLOUD_BACKEND_URL', 'http://10.0.2.2:8101')
+    elif IS_WINDOWS:
+        # Windows 开发环境
+        CLOUD_SERVICE_URL = os.getenv('NEXT_CLOUD_BACKEND_URL', 'http://localhost:8101')
+    else:
+        # Linux/Mac 开发环境
+        CLOUD_SERVICE_URL = os.getenv('NEXT_CLOUD_BACKEND_URL', 'http://localhost:8101')
+else:
+    # 生产环境
+    CLOUD_SERVICE_URL = os.getenv('NEXT_CLOUD_BACKEND_URL', 'http://192.168.68.53:8101')
+
+print(f"CLOUD_SERVICE_URL: {os.getenv('NEXT_CLOUD_BACKEND_URL', 'not set')}")
+
 
 # 创建临时目录
 TEMP_DIR = Path(tempfile.gettempdir()) / "score_following"

@@ -24,6 +24,7 @@ orjson==3.8.12
 
 # Debug 工具
 debugpy==1.6.7
+pydantic==2.4.2
 
 # 表单数据处理
 python-multipart==0.0.6

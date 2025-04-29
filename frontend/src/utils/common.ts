@@ -28,21 +28,19 @@ const getCloudBackendUrl = (): string => {
   const isAndroid = getEnvironment() === 'Android';
   const baseUrl = isAndroid ? 'http://10.0.2.2:8101' : (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101');
   const cloudBackendUrl = baseUrl + '/cloud';
-  const productionBackendUrl = 'https://api.production.com/cloud';
+  const productionBackendUrl = 'http://192.168.68.58:8101/cloud';
   return isDebug ? cloudBackendUrl : productionBackendUrl;
 };
 
 /**
- * 获取云服务后台地址，根据环境区分调试和生产环境。
- * @returns 后台服务的基础 URL。
+ * 获取本机后台地址。
+ * @returns 本机服务的基础 URL。
  */
 const getDeviceBackendUrl = (): string => {
-  const isDebug = process.env.NODE_ENV === 'development';
   const isAndroid = getEnvironment() === 'Android';
   const baseUrl = isAndroid ? 'http://10.0.2.2:8201' : (process.env.NEXT_LOCAL_BACKEND_URL || 'http://localhost:8201');
-  const cloudBackendUrl = baseUrl + '/local';
-  const productionBackendUrl = 'https://api.production.com/local';
-  return isDebug ? cloudBackendUrl : productionBackendUrl;
+  const backendUrl = baseUrl + '/local';
+  return backendUrl;
 };
 
 /**

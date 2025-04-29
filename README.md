@@ -192,3 +192,119 @@ $ npm run start-win
 
 4. **First Startup**:
    - The first startup of the backend services might take longer as it downloads required soundfonts and dependencies.
+
+# iMusic Android Development Guide
+
+## Prerequisites
+- Android Studio
+- Node.js (v16 or higher recommended)
+- npm or yarn
+- Android Emulator or physical device
+
+## Development Environment Setup
+
+### 1. Frontend Development Environment
+```bash
+# Navigate to frontend project directory
+cd frontend
+
+# Install dependencies
+npm install
+# or
+yarn install
+
+# Start development server
+npm run dev
+# or
+yarn dev
+```
+
+### 2. Android Development Environment
+1. Open Android Studio
+2. Open the `android` directory as a project
+3. Wait for Gradle sync to complete
+
+## Testing the App on Android
+
+### 1. Configure Emulator
+1. Open Android Studio's AVD Manager
+2. Create a new virtual device (if not already created)
+   - Select device type (e.g., Pixel 4)
+   - Choose system image (API 30 or higher recommended)
+   - Complete the creation
+
+### 2. Launch the App
+1. Ensure the frontend development server is running (`npm run dev` or `yarn dev`)
+2. Click the "Run" button (green triangle) in Android Studio
+3. Select target device (emulator or physical device)
+4. Wait for app installation and launch
+
+### 3. Debugging Tips
+- Using Chrome DevTools for debugging
+  1. Visit `chrome://inspect` in Chrome browser
+  2. Ensure device is connected and recognized
+  3. Click "inspect" to open debugging tools
+
+- View logs
+  ```bash
+  adb logcat | grep "iMusic"
+  ```
+
+### 4. Troubleshooting Common Issues
+1. If encountering network connection issues:
+   - Ensure using `10.0.2.2` instead of `localhost` for local server access
+   - Verify correct ports (frontend default 50003, backend 8101/8201)
+
+2. If encountering white screen:
+   - Check if Metro server is running
+   - Try clearing app data and cache
+   - Rebuild the application
+
+3. If encountering build errors:
+   ```bash
+   # Clean project
+   cd android
+   ./gradlew clean
+   ```
+
+## Deployment Process
+
+### 1. Building Production Version
+```bash
+# Frontend build
+cd frontend
+npm run build
+# or
+yarn build
+
+# Android build
+npx cap open android
+./gradlew assembleRelease
+```
+
+### 2. Testing Production Version
+1. Install release version on emulator or device
+2. Verify all functionality works correctly
+3. Check performance metrics
+
+## Important Notes
+- Ensure correct backend URL configuration in `common.ts`
+- Use `10.0.2.2` for local server access in development environment
+- Keep frontend and Android code in sync
+- Regularly test all features to ensure compatibility
+
+## Useful Commands
+```bash
+# Clean Android build
+cd android
+./gradlew clean
+
+# View connected devices
+adb devices
+
+# Install APK
+adb install app/build/outputs/apk/release/app-release.apk
+
+# Uninstall app
+adb uninstall com.imusic.app
+```

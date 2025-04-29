@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <!-- 外部存储根目录 -->
+    <external-path name="external_files" path="." />
+    
+    <!-- 应用专属外部存储目录 -->
+    <external-files-path name="external_files_path" path="." />
+    
+    <!-- 应用专属内部存储目录 -->
+    <files-path name="files" path="." />
+    
+    <!-- 应用专属缓存目录 -->
+    <cache-path name="cache" path="." />
+    
+    <!-- 外部存储根目录下的特定文件夹 -->
+    <external-path name="downloads" path="Download" />
+    <external-path name="documents" path="Documents" />
+    <external-path name="music" path="Music" />
+    <external-path name="pictures" path="Pictures" />
 </paths>

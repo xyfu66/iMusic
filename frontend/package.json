@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "Frontend application",
   "scripts": {
-    "start": "PORT=50003 next dev",
-    "start-win": "cross-env PORT=50003 next dev",
-    "build": "next build",
+    "start": "cross-env NODE_ENV=development PORT=50003 next dev",
+    "start:win": "cross-env NODE_ENV=development PORT=50003 next dev",
+    "start:win:production": "cross-env NODE_ENV=production PORT=50003 next dev",
+    "build": "cross-env NODE_ENV=production next build",
+    "build:win": "cross-env NODE_ENV=production next build",
+    "build:win:development": "cross-env NODE_ENV=development next build",
     "lint": "next lint",
     "test": "next test"
   },

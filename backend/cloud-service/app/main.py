@@ -34,15 +34,17 @@ evaluator = PerformanceEvaluator()
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:50003", "http://127.0.0.1:50003", "http://localhost:8101", "http://127.0.0.1:8101"],
+    allow_origins=["*"],  # 允许所有来源
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 明确指定允许的方法
+    allow_headers=["*"],  # 允许所有请求头
+    expose_headers=["*"],  # 允许暴露所有响应头
+    max_age=3600,  # 预检请求的缓存时间
 )
 
 
 # ================== API ==================
-@app.get("cloud/")
+@app.get("/cloud")
 async def root():
     return {"message": "Hello Cloud"}
 
