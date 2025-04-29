@@ -1,6 +1,8 @@
 package com.imusic.app;
 
 import android.content.Context;
+import android.media.AudioManager;
+import android.media.AudioDeviceInfo;
 import android.util.Log;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
@@ -8,15 +10,33 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DeviceServiceManager {
     private static final String TAG = "DeviceServiceManager";
     private Context context;
     private PythonInterpreter interpreter;
     private boolean isRunning = false;
+    private AudioManager audioManager;
 
     public DeviceServiceManager(Context context) {
         this.context = context;
+        this.audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    public List<AudioDeviceInfo> getAudioInputDevices() {
+        List<AudioDeviceInfo> inputDevices = new ArrayList<>();
+        if (audioManager != null) {
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+            if (devices != null) {
+                for (AudioDeviceInfo device : devices) {
+                    inputDevices.add(device);
+                    Log.d(TAG, "Found input device: " + device.getProductName());
+                }
+            }
+        }
+        return inputDevices;
     }
 
     public void startService() {
@@ -67,28 +87,30 @@ public class DeviceServiceManager {
         }
     }
 
-    private void copyPythonFiles() throws Exception {
-        // 复制 Python 文件从 assets 到应用私有目录
-        String[] files = {
-            "app/main.py",
-            "app/utils.py",
-            "app/common.py",
-            "app/config.py",
-            "app/position_manager.py"
-        };
+    private void copyPythonFiles() {
+        try {
+            // 确保目标目录存在
+            File pythonDir = new File(context.getFilesDir(), "app");
+            if (!pythonDir.exists()) {
+                pythonDir.mkdirs();
+            }
 
-        for (String file : files) {
-            File destFile = new File(context.getFilesDir(), file);
-            destFile.getParentFile().mkdirs();
-            
-            try (InputStream in = context.getAssets().open(file);
-                 OutputStream out = new FileOutputStream(destFile)) {
+            // 复制 Python 文件
+            String[] files = {"main.py", "utils.py", "tuner.py"};
+            for (String file : files) {
+                InputStream in = context.getAssets().open("python/" + file);
+                File outFile = new File(pythonDir, file);
+                OutputStream out = new FileOutputStream(outFile);
                 byte[] buffer = new byte[1024];
                 int read;
                 while ((read = in.read(buffer)) != -1) {
                     out.write(buffer, 0, read);
                 }
+                in.close();
+                out.close();
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to copy Python files", e);
         }
     }
 } 

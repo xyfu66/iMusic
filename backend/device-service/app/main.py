@@ -2,9 +2,30 @@ import asyncio
 import warnings
 import debugpy
 import os
+import logging
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import WebSocket, WebSocketDisconnect
 from app.tuner.pitch_detector import PitchDetector
+
+# 创建日志目录
+log_dir = "logs"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+# 生成带时间戳的日志文件名
+timestamp = datetime.now().strftime("%Y%m%d")
+log_file = os.path.join(log_dir, f"device-service_{timestamp}.log")
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # 输出到控制台
+        logging.FileHandler(log_file, encoding='utf-8')  # 输出到文件，使用 UTF-8 编码
+    ]
+)
 
 warnings.filterwarnings("ignore", module="partitura")
 
@@ -101,8 +122,8 @@ async def websocket_endpoint(websocket: WebSocket):
             )
             
             # 创建并启动所有任务
-            stop_listener = asyncio.create_task(listen_for_stop())
-            position_updater = asyncio.create_task(update_position(file_id))
+            stop_listener = asyncio.create_task(listen_for_stop(websocket))
+            position_updater = asyncio.create_task(update_position(file_id, websocket))
             tasks.extend([stop_listener, position_updater])
 
             # 等待任意一个任务完成
@@ -163,17 +184,6 @@ async def violin_tuner(websocket: WebSocket):
     """
     tasks = []
 
-    async def listen_for_stop():
-        try:
-            while True:
-                data = await websocket.receive_json()
-                if data.get("action") == "stop":
-                    print("[DEBUG] Received stop signal")
-                    return True
-        except WebSocketDisconnect:
-            print("[DEBUG] WebSocket disconnected")
-            return True
-
     try:
         await websocket.accept()
         print("[DEBUG] Violin tuner WebSocket connected")
@@ -193,7 +203,7 @@ async def violin_tuner(websocket: WebSocket):
         )
 
         # 创建停止信号监听任务
-        stop_listener = asyncio.create_task(listen_for_stop())
+        stop_listener = asyncio.create_task(listen_for_stop(websocket))
         tasks.extend([pitch_detection_task, stop_listener])
 
         # 等待任意一个任务完成

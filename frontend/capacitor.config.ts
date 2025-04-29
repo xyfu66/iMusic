@@ -33,6 +33,9 @@ const config: CapacitorConfig = {
       showSpinner: true,
       splashFullScreen: true,
       splashImmersive: true
+    },
+    AudioDevice: {
+      // 插件配置
     }
   }
 };

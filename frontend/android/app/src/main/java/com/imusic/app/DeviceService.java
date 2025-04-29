@@ -5,9 +5,11 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioDeviceInfo;
 import android.os.Build;
 import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
+import java.util.List;
 
 public class DeviceService extends Service {
     private static final String CHANNEL_ID = "DeviceServiceChannel";
@@ -44,6 +46,10 @@ public class DeviceService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    public List<AudioDeviceInfo> getAudioInputDevices() {
+        return deviceServiceManager.getAudioInputDevices();
     }
 
     private void createNotificationChannel() {

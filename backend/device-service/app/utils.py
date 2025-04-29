@@ -129,17 +129,27 @@ def get_audio_devices() -> list[dict]:
     """
     try:
         p = pyaudio.PyAudio()
+        logging.info("Initializing audio devices...")
+
+        devices = []
+
         device_count = p.get_device_count()
         default_device = p.get_default_input_device_info()
-        devices = []
+
         for i in range(device_count):
             device_info = p.get_device_info_by_index(i)
+             # 如果这个设备不是默认设备，才添加
             if device_info == default_device:
                 continue
-            devices.append({"index": device_info["index"], "name": device_info["name"]})
+            # 检查是否为输入设备
+            if device_info.get("maxInputChannels", 0) > 0:
+                devices.append({"index": device_info["index"], "name": device_info["name"]})
+
         devices.insert(
             0, {"index": default_device["index"], "name": default_device["name"]}
         )
+        logging.info(f"Devices: {devices}")
+
         p.terminate()
     except Exception as e:
         logging.error(f"Error: {e}")

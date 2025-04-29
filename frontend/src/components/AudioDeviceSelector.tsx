@@ -1,7 +1,8 @@
 import React from 'react';
+import { AudioDeviceIF } from '../utils/interfaces';
 
 interface AudioDeviceSelectorProps {
-  audioDevices: { index: number; name: string }[];
+  audioDevices: AudioDeviceIF[];
   selectedAudioDevice: number;
   setSelectedAudioDevice: (deviceIndex: number) => void;
 }
