@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { fetchAudioDevices, AudioDevice } from '../services/DeviceService'; // 确保路径正确
+import { fetchAudioDevices } from '../services/DeviceService'; // 确保路径正确
+import { AudioDeviceIF } from '../utils/interfaces';
 
 export const useAudioDevices = () => {
-  const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
+  const [audioDevices, setAudioDevices] = useState<AudioDeviceIF[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<number>(0);
 
   useEffect(() => {
