@@ -1,11 +1,17 @@
-package com.imusic.app;
+package com.imusic.app.plugins;
 
 import android.content.Intent;
+import android.media.AudioDeviceInfo;
 import android.os.Build;
+
+import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @CapacitorPlugin(name = "DeviceService")
 public class DeviceServicePlugin extends Plugin {
@@ -41,4 +47,5 @@ public class DeviceServicePlugin extends Plugin {
             call.reject("Failed to stop device service", e);
         }
     }
-} 
+
+}

@@ -18,7 +18,7 @@ const AUDIO = 'Audio';
 const PracticePage: React.FC = () => {
   const router = useRouter();
   const practiceData = useRecoilValue(practiceState);
-  const { audioDevices, selectedAudioDevice, setSelectedAudioDevice } = useAudioDevices();
+  const { audioDevices, selectedAudioDevice, setSelectedAudioDevice, error, isLoading, refreshDevices } = useAudioDevices();
 
   const vfRef = useRef<HTMLDivElement>(null);
   const osmd = useRef<OpenSheetMusicDisplay | null>(null);
@@ -442,10 +442,13 @@ const PracticePage: React.FC = () => {
                         audioDevices={audioDevices}
                         selectedAudioDevice={selectedAudioDevice}
                         setSelectedAudioDevice={setSelectedAudioDevice}
+                        error={error}
+                        isLoading={isLoading}
+                        onRefresh={refreshDevices}
                       />
                     </div>
                     <div>
-                      {inputType === AUDIO && (
+                      {inputType === AUDIO && !error && !isLoading && (
                         <AudioInputVisualizer deviceIndex={selectedAudioDevice} />
                       )}
                     </div>

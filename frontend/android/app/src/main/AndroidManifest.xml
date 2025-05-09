@@ -7,13 +7,15 @@
     
     <!-- 存储权限 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
-                     android:maxSdkVersion="29" />
-    <!-- Android 10 (API 29) 及以上版本不需要 WRITE_EXTERNAL_STORAGE 权限 -->
     
     <!-- 音频相关权限 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
     
     <!-- 后台服务权限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -27,6 +29,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:requestLegacyExternalStorage="true">
 
         <activity
@@ -45,7 +48,7 @@
         </activity>
 
         <service
-            android:name=".DeviceService"
+            android:name=".plugins.DeviceService"
             android:enabled="true"
             android:exported="false" />
 
@@ -60,9 +63,5 @@
         </provider>
 
     </application>
-
-    <!-- Permissions -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
 </manifest>

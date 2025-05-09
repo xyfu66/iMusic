@@ -8,7 +8,7 @@ import AudioDeviceSelector from '../components/AudioDeviceSelector';
 const TunerMetronome: React.FC = () => {
   const router = useRouter();
   const { tab } = router.query; // 获取路由参数
-  const { audioDevices, selectedAudioDevice, setSelectedAudioDevice } = useAudioDevices();
+  const { audioDevices, selectedAudioDevice, setSelectedAudioDevice, error, isLoading, refreshDevices } = useAudioDevices();
 
   const [activeTab, setActiveTab] = useState<'Tuner' | 'Metronome' | null>(null);
   const [instrument, setInstrument] = useState<string>('Violin');
@@ -25,7 +25,9 @@ const TunerMetronome: React.FC = () => {
   const renderTuner = () => {
     switch (instrument) {
       case 'Violin':
-        return <ViolinTuner selectedAudioDevice={selectedAudioDevice} />;
+        return !error && !isLoading ? (
+          <ViolinTuner selectedAudioDevice={selectedAudioDevice} />
+        ) : null;
       // 其他乐器可以在这里添加对应的组件
       default:
         return <p className="text-center text-gray-600">该乐器的调音器尚未开发。</p>;
@@ -65,13 +67,15 @@ const TunerMetronome: React.FC = () => {
 
       {activeTab === 'Tuner' && (
         <div className="p-4">
-
           <div className="mt-4">
             <label className="block text-gray-700">选择音源设备:</label>
             <AudioDeviceSelector
               audioDevices={audioDevices}
               selectedAudioDevice={selectedAudioDevice}
               setSelectedAudioDevice={setSelectedAudioDevice}
+              error={error}
+              isLoading={isLoading}
+              onRefresh={refreshDevices}
             />
           </div>
 

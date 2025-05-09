@@ -1,5 +1,6 @@
-package com.imusic.app;
+package com.imusic.app.plugins;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -23,6 +24,7 @@ public class DeviceService extends Service {
         createNotificationChannel();
     }
 
+    @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)

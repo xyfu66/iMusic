@@ -27,8 +27,7 @@ export const decodeBase64 = (base64Data: string, mimeType: string = ''): Blob | 
  */
 const getCloudBackendUrl = (): string => {
   const isDebug = process.env.NODE_ENV === 'development';
-  const isAndroid = Capacitor.getPlatform() === 'android';
-  const baseUrl = isAndroid ? 'http://10.0.2.2:8101' : (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101');
+  const baseUrl = (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101');
   const cloudBackendUrl = baseUrl + '/cloud';
   const productionBackendUrl = 'http://192.168.68.58:8101/cloud';
   return isDebug ? cloudBackendUrl : productionBackendUrl;
@@ -39,8 +38,7 @@ const getCloudBackendUrl = (): string => {
  * @returns 本机服务的基础 URL。
  */
 const getDeviceBackendUrl = (): string => {
-  const isAndroid = Capacitor.getPlatform() === 'android';
-  const baseUrl = isAndroid ? 'http://10.0.2.2:8201' : (process.env.NEXT_LOCAL_BACKEND_URL || 'http://localhost:8201');
+  const baseUrl = (process.env.NEXT_LOCAL_BACKEND_URL || 'http://localhost:8201');
   const backendUrl = baseUrl + '/local';
   return backendUrl;
 };
