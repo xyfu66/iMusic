@@ -171,4 +171,4 @@ node_modules/
 
 .DS_Store
 .idea/
-frontend/out/
+out
