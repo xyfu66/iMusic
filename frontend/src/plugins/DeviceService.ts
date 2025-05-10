@@ -1,8 +1,8 @@
 import { registerPlugin } from '@capacitor/core';
 
 export interface DeviceServicePlugin {
-  startDeviceService(): Promise<void>;
-  stopDeviceService(): Promise<void>;
+  startService(): Promise<void>;
+  stopService(): Promise<void>;
 }
 
 const DeviceService = registerPlugin<DeviceServicePlugin>('DeviceService');

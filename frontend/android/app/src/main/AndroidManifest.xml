@@ -7,9 +7,11 @@
     
     <!-- 存储权限 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     
     <!-- 音频相关权限 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.RECORD_BACKGROUND_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
@@ -20,6 +22,18 @@
     <!-- 后台服务权限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- 执行内部文件权限 -->
+    <uses-permission android:name="android.permission.EXECUTE_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
+    
+    <!-- Shell 执行权限 -->
+    <uses-permission android:name="android.permission.SHELL" />
+    
+    <!-- 额外执行权限 -->
+    <uses-permission android:name="android.permission.EXECUTE" />
+    <uses-permission android:name="android.permission.EXECUTE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -30,7 +44,9 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:extractNativeLibs="true"
+        android:sharedUserId="android.uid.system">
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"

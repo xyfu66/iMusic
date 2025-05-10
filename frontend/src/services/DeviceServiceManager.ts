@@ -20,7 +20,7 @@ class DeviceServiceManager {
         }
 
         try {
-            await DeviceService.startDeviceService();
+            await DeviceService.startService();
             this.isRunning = true;
             console.log('Device service started successfully');
         } catch (error) {
@@ -36,7 +36,7 @@ class DeviceServiceManager {
         }
 
         try {
-            await DeviceService.stopDeviceService();
+            await DeviceService.stopService();
             this.isRunning = false;
             console.log('Device service stopped successfully');
         } catch (error) {

@@ -21,10 +21,13 @@ android {
         python {
             buildPython "D:/Develop/anaconda3/python.exe"
             pip {
-                options("--extra-index-url", "https://mirrors.aliyun.com/pypi/simple")
-                options("--prefer-binary")
-                options("--no-deps")
-                install("-r", "D:/Develop/Projects/iMusic/backend/device-service/requirements.txt")
+//                options("--extra-index-url", "https://mirrors.aliyun.com/pypi/simple")
+//                options("--prefer-binary")
+//                options("--no-deps")
+                install("fastapi==0.95.1")
+                install("uvicorn==0.22.0")
+                install("websockets")
+                install("aiohttp==3.7.4")
             }
         }
 

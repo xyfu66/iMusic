@@ -200,6 +200,8 @@ $ npm run start-win
 - Node.js (v16 or higher recommended)
 - npm or yarn
 - Android Emulator or physical device
+- Python 3.10 (for device service)
+- PyInstaller (`pip install pyinstaller`)
 
 ## Development Environment Setup
 
@@ -224,6 +226,66 @@ yarn dev
 2. Open the `android` directory as a project
 3. Wait for Gradle sync to complete
 
+### 3. Device Service Setup
+```bash
+# Navigate to device service directory
+cd backend/device-service
+
+# Create and activate conda environment
+conda create -n sfa-device python=3.10
+conda activate sfa-device
+
+# Install dependencies
+pip install -r requirements.txt
+pip install pyinstaller
+
+# Build device service for Android
+python build.py
+```
+
+## Development Workflow
+
+### 1. Frontend Changes
+当修改了前端代码后：
+```bash
+# 1. 构建前端
+cd frontend
+npm run build
+
+# 2. 同步到 Android 项目
+npx cap sync android
+
+# 3. 打开 Android Studio
+npx cap open android
+```
+
+### 2. Device Service Changes
+当修改了设备服务代码后：
+```bash
+# 1. 重新构建设备服务
+cd backend/device-service
+python build.py
+
+# 2. 同步到 Android 项目
+cd ../../frontend
+npx cap sync android
+
+# 3. 重新构建 Android 项目
+cd android
+./gradlew clean
+./gradlew assembleDebug
+```
+
+### 3. Android Native Changes
+当修改了 Android 原生代码后：
+```bash
+# 1. 在 Android Studio 中构建项目
+# 或者使用命令行
+cd frontend/android
+./gradlew clean
+./gradlew assembleDebug
+```
+
 ## Testing the App on Android
 
 ### 1. Configure Emulator
@@ -247,25 +309,46 @@ yarn dev
 
 - View logs
   ```bash
+  # 查看所有日志
+  adb logcat
+  
+  # 只查看应用日志
   adb logcat | grep "iMusic"
+  
+  # 清除日志
+  adb logcat -c
   ```
 
 ### 4. Troubleshooting Common Issues
 1. If encountering network connection issues:
    - Ensure using `10.0.2.2` instead of `localhost` for local server access
    - Verify correct ports (frontend default 50003, backend 8101/8201)
+   - Check if device service is running properly
 
 2. If encountering white screen:
    - Check if Metro server is running
    - Try clearing app data and cache
    - Rebuild the application
+   - Check if device service is running properly
 
 3. If encountering build errors:
    ```bash
    # Clean project
    cd android
    ./gradlew clean
+   
+   # 检查 Gradle 版本
+   ./gradlew --version
+   
+   # 更新 Gradle
+   ./gradlew wrapper --gradle-version 8.0.0
    ```
+
+4. If device service fails to start:
+   - Check if the executable is properly copied to assets
+   - Verify file permissions
+   - Check logs for specific error messages
+   - Try rebuilding device service
 
 ## Deployment Process
 
@@ -274,11 +357,20 @@ yarn dev
 # Frontend build
 cd frontend
 npm run build
-# or
-yarn build
+
+# Sync to Android
+npx cap sync android
+
+# Build device service
+cd ../backend/device-service
+python build.py
+
+# Sync again
+cd ../../frontend
+npx cap sync android
 
 # Android build
-npx cap open android
+cd android
 ./gradlew assembleRelease
 ```
 
@@ -286,12 +378,15 @@ npx cap open android
 1. Install release version on emulator or device
 2. Verify all functionality works correctly
 3. Check performance metrics
+4. Test device service functionality
 
 ## Important Notes
 - Ensure correct backend URL configuration in `common.ts`
 - Use `10.0.2.2` for local server access in development environment
 - Keep frontend and Android code in sync
 - Regularly test all features to ensure compatibility
+- Always rebuild device service after making changes to Python code
+- Check logs for any permission or execution issues
 
 ## Useful Commands
 ```bash
@@ -307,4 +402,44 @@ adb install app/build/outputs/apk/release/app-release.apk
 
 # Uninstall app
 adb uninstall com.imusic.app
+
+# Clear app data
+adb shell pm clear com.imusic.app
+
+# Force stop app
+adb shell am force-stop com.imusic.app
+
+# Start app
+adb shell am start -n com.imusic.app/com.imusic.app.MainActivity
+
+# View app logs
+adb logcat | grep "iMusic"
+
+# Check app permissions
+adb shell dumpsys package com.imusic.app | grep permission
 ```
+
+## Development Tips
+1. 在修改前端代码后：
+   - 运行 `npm run build`
+   - 运行 `npx cap sync android`
+   - 在 Android Studio 中重新构建项目
+
+2. 在修改设备服务代码后：
+   - 运行 `python build.py`
+   - 运行 `npx cap sync android`
+   - 在 Android Studio 中重新构建项目
+
+3. 在修改 Android 原生代码后：
+   - 在 Android Studio 中直接构建项目
+   - 或使用 `./gradlew assembleDebug`
+
+4. 调试技巧：
+   - 使用 `adb logcat` 查看详细日志
+   - 使用 Chrome DevTools 调试 WebView
+   - 在 Android Studio 中使用断点调试原生代码
+
+5. 性能优化：
+   - 使用 Android Studio 的 CPU Profiler 分析性能
+   - 使用 Memory Profiler 检查内存使用
+   - 使用 Network Profiler 监控网络请求

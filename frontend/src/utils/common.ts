@@ -29,7 +29,7 @@ const getCloudBackendUrl = (): string => {
   const isDebug = process.env.NODE_ENV === 'development';
   const baseUrl = (process.env.NEXT_CLOUD_BACKEND_URL || 'http://localhost:8101');
   const cloudBackendUrl = baseUrl + '/cloud';
-  const productionBackendUrl = 'http://192.168.68.58:8101/cloud';
+  const productionBackendUrl = 'http://192.168.68.54:8101/cloud';
   return isDebug ? cloudBackendUrl : productionBackendUrl;
 };
 
