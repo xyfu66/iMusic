@@ -30,6 +30,25 @@ def build_app():
         '--hidden-import', 'uvicorn.protocols.websockets.auto',
         '--hidden-import', 'uvicorn.lifespan',
         '--hidden-import', 'uvicorn.lifespan.on',
+        '--hidden-import', 'numpy',
+        '--hidden-import', 'scipy',
+        '--hidden-import', 'librosa',
+        '--hidden-import', 'mido',
+        '--hidden-import', 'python-rtmidi',
+        '--hidden-import', 'partitura',
+        '--hidden-import', 'progressbar2',
+        '--hidden-import', 'pyaudio',
+        '--hidden-import', 'python-hiddenmarkov',
+        '--hidden-import', 'pyfluidsynth',
+        '--hidden-import', 'pymatchmaker',
+        '--hidden-import', 'fastapi',
+        '--hidden-import', 'websockets',
+        '--hidden-import', 'debugpy',
+        '--hidden-import', 'python-multipart',
+        '--hidden-import', 'aiohttp',
+        '--hidden-import', 'python-dotenv',
+        '--clean',  # 清理临时文件
+        '--noconfirm',  # 不询问确认
         'app/main.py'
     ], check=True)
     
