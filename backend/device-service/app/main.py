@@ -3,10 +3,13 @@ import warnings
 import debugpy
 import os
 import logging
+import argparse
+import uvicorn
+
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import WebSocket, WebSocketDisconnect
-from app.tuner.pitch_detector import PitchDetector
+from .tuner.pitch_detector import PitchDetector
 
 # 创建日志目录
 log_dir = "logs"
@@ -251,3 +254,32 @@ async def violin_tuner(websocket: WebSocket):
             await websocket.close()
         print("[DEBUG] Violin tuner WebSocket closed")
 
+
+def start_service():
+    """
+    启动 FastAPI 服务
+    """
+    parser = argparse.ArgumentParser(description='Device Service')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind')
+    parser.add_argument('--port', type=int, default=8201, help='Port to bind')
+    args = parser.parse_args()
+    
+    try:
+        uvicorn.run(app, host=args.host, port=args.port)
+    except Exception as e:
+        print(f"Error starting service: {e}")
+        raise e
+
+def stop_service():
+    """
+    停止服务
+    """
+    # 清理资源
+    cleanup_temp_files()
+    # 关闭线程池
+    executor.shutdown(wait=False)
+
+if __name__ == "__main__":
+    print("[DEBUG] Starting service...")
+    start_service()
+    print("[DEBUG] Service started")
