@@ -9,7 +9,7 @@ pyaudio>=0.2.14
 python-hiddenmarkov>=0.1.3
 pyfluidsynth>=1.3.3
 scipy>=1.11.4,<1.15
-pymatchmaker
+git+https://github.com/pymatchmaker/matchmaker.git
 
 # FastAPI 框架
 fastapi==0.95.1

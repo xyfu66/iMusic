@@ -24,7 +24,6 @@ android {
                 options("--extra-index-url", "https://mirrors.aliyun.com/pypi/simple")
                 options("--prefer-binary")
                 options("--no-deps")
-                install("numpy==1.26.3")
                 install("-r", "D:/Develop/Projects/iMusic/backend/device-service/requirements.txt")
             }
         }

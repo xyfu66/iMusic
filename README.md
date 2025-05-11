@@ -6,7 +6,7 @@ This is a simple score following app that reads a score file (MusicXML) and disp
 
 ## Pre-requisites
 
-- **Python Version**: 3.10 (other versions will be supported soon!)
+- **Python Version**: 3.9 (other versions will be supported soon!)
 - **System Dependencies**:
   - [Fluidsynth](https://www.fluidsynth.org/)
   - [PortAudio](https://www.portaudio.com/)
@@ -97,7 +97,7 @@ The device service is designed to run directly on the host machine (not in Docke
 
 ```bash
 $ cd backend/device-service/
-$ conda create -n sfa-device python=3.10
+$ conda create -n sfa-device python=3.9
 $ conda activate sfa-device
 $ pip install -r requirements.txt
 ```

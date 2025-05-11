@@ -165,5 +165,5 @@ node_modules/
 
 .DS_Store
 .idea/
-out/
 /frontend/android/app/src/main/assets/python
+/frontend/out

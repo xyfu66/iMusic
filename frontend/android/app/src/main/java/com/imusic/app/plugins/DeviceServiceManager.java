@@ -1,7 +1,6 @@
 package com.imusic.app.plugins;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.AudioDeviceInfo;
 import android.os.Build;
@@ -15,6 +14,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +23,7 @@ import java.util.concurrent.Executors;
 
 public class DeviceServiceManager {
     private static final String TAG = "DeviceServiceManager";
+    private static final String SERVICE_URL = "http://localhost:8201/local";
     private final Context context;
     private boolean isRunning = false;
     private final AudioManager audioManager;
@@ -84,6 +86,11 @@ public class DeviceServiceManager {
                     isRunning = false;
                 }
             });
+
+            // 启动健康检查
+            startHealthCheck();
+            
+            Log.d(TAG, "Device service started successfully");
             
         } catch (Exception e) {
             Log.e(TAG, "Failed to start device service", e);
@@ -99,6 +106,9 @@ public class DeviceServiceManager {
         }
 
         try {
+            // 停止健康检查
+            stopHealthCheck();
+
             if (mainModule != null) {
                 mainModule.callAttr("stop_service");
                 mainModule = null;
@@ -180,6 +190,65 @@ public class DeviceServiceManager {
         } catch (Exception e) {
             Log.e(TAG, "Failed to copy Python files", e);
             e.printStackTrace();
+        }
+    }
+
+    private void startHealthCheck() {
+        executorService.execute(() -> {
+            int retryCount = 0;
+            final int MAX_RETRIES = 3;
+            final int RETRY_DELAY_MS = 2000;
+            final int INITIAL_DELAY_MS = 3000;
+
+            try {
+                // 等待服务启动
+                Thread.sleep(INITIAL_DELAY_MS);
+                Log.d(TAG, "开始健康检查...");
+
+                while (isRunning && retryCount < MAX_RETRIES) {
+                    try {
+                        Log.d(TAG, "尝试健康检查，第 " + (retryCount + 1) + " 次");
+                        Process process = Runtime.getRuntime().exec("curl -s " + SERVICE_URL + "/health");
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        String response = reader.readLine();
+                        int exitCode = process.waitFor();
+
+                        if (exitCode == 0 && response != null && response.contains("ok")) {
+                            Log.d(TAG, "健康检查成功");
+                            retryCount = 0;
+                            Thread.sleep(5000); // 成功后等待5秒再检查
+                        } else {
+                            Log.w(TAG, "健康检查失败: exitCode=" + exitCode + ", response=" + response);
+                            retryCount++;
+                            if (retryCount < MAX_RETRIES) {
+                                Log.d(TAG, "等待 " + RETRY_DELAY_MS + "ms 后重试...");
+                                Thread.sleep(RETRY_DELAY_MS);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "健康检查出错: " + e.getMessage());
+                        retryCount++;
+                        if (retryCount < MAX_RETRIES) {
+                            Log.d(TAG, "等待 " + RETRY_DELAY_MS + "ms 后重试...");
+                            Thread.sleep(RETRY_DELAY_MS);
+                        }
+                    }
+                }
+
+                if (retryCount >= MAX_RETRIES) {
+                    Log.e(TAG, "健康检查失败，停止服务");
+                    stopService();
+                }
+            } catch (InterruptedException e) {
+                Log.e(TAG, "健康检查线程被中断: " + e.getMessage());
+            }
+        });
+    }
+
+    private void stopHealthCheck() {
+        if (executorService != null) {
+            executorService.shutdown();
+            executorService = Executors.newSingleThreadExecutor();
         }
     }
 } 
