@@ -169,10 +169,6 @@ $ npm run start-win
 
 ---
 
-## Demo Video
-
-[Demo Video Link](https://github.com/user-attachments/assets/a8010f8b-45a1-4be5-8cd1-f65a9601f8eb)
-
 ---
 
 ## Notes
